@@ -84,11 +84,11 @@ namespace ReportRedaktor
             List<string> personNames = new List<string>();
             foreach (var item in period)
             {
-                personNames.AddRange((personNames.Union(item.Persones
-                                                            .Select(s=>s.Name)))
-                                                            .Except(personNames
-                                                            .Intersect(item.Persones
-                                                                           .Select(s=>s.Name))));
+                var current_names = item.Persones
+                                        .Select(s => s.Name)
+                                        .ToList();
+                var bufferPersoneNames = personNames;
+                personNames.AddRange(current_names.Except(bufferPersoneNames.Intersect(current_names)));
             }
             List<PersonalReport> personalReports = new List<PersonalReport>();
             foreach (var item in personNames)
