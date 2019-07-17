@@ -171,8 +171,10 @@ namespace ReportRedaktor
         {
             if (string.IsNullOrEmpty(fileNameExcel))
                 return;
-            List<Day> Period = getPeriod(fileNameExcel);
-            getValidReport(Period, fileNameExcel);
+            var work_manager = new Work_manager();
+            var result = work_manager.GetWork_Events(fileNameExcel);
+            //List<Day> Period = getPeriod(fileNameExcel);
+            //getValidReport(Period, fileNameExcel);
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
