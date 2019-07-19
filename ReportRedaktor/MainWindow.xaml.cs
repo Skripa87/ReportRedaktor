@@ -12,7 +12,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Office2013.Excel;
 
 namespace ReportRedaktor
@@ -24,143 +23,143 @@ namespace ReportRedaktor
     {
         private string fileNameExcel;
 
-        private List<Day> getPeriod(string fileName)
-        {
-            fileNameExcel = fileName;
-            var workbook = new XLWorkbook(fileNameExcel);
-            var workcheet = workbook.Worksheet(1);
-            int row = 9, column = 1;
-            string date = "0", name = "", enter = "", _out = "";
-            List<Day> Period = new List<Day>();
-            Day day = new Day(date);
-            Persone persone = new Persone("");
-            while (true)
-            {
-                date = workcheet.Cell(row, column)
-                                .Value.ToString();
-                if (date != "" && DateTime.Parse(date)
-                                          .ToString() != day.Date.ToString())
-                {
-                    if (day.Date != null && day.Persones.Count > 0)
-                    {
-                        Period.Add(day);
-                        day = new Day(date);
-                    }
-                }
-                column += 2;
-                name = workcheet.Cell(row, column)
-                                .Value
-                                .ToString();
-                if (name != "" && persone.Name != name)
-                {
-                    day.Persones.Add(persone);
-                    persone = new Persone(name);
-                }
-                column += 2;
-                enter = workcheet.Cell(row, column)
-                                .Value
-                                .ToString();
-                persone.EnteredList.Add(enter);
-                column++;
-                _out = workcheet.Cell(row, column)
-                                .Value
-                                .ToString();
-                persone.GetOutList
-                       .Add(_out);
-                column = 1;
-                row++;
-                if (date == "" && name == "" && enter == "" && _out == "")
-                {
-                    day.Persones.Add(persone);
-                    Period.Add(day);
-                    break;
-                }
-            }
-            return Period;
-        }
+        //private List<Day> getPeriod(string fileName)
+        //{
+        //    fileNameExcel = fileName;
+        //   // var workbook = new XLWorkbook(fileNameExcel);
+        //    var workcheet = workbook.Worksheet(1);
+        //    int row = 9, column = 1;
+        //    string date = "0", name = "", enter = "", _out = "";
+        //    List<Day> Period = new List<Day>();
+        //    Day day = new Day(date);
+        //    Persone persone = new Persone("");
+        //    while (true)
+        //    {
+        //        date = workcheet.Cell(row, column)
+        //                        .Value.ToString();
+        //        if (date != "" && DateTime.Parse(date)
+        //                                  .ToString() != day.Date.ToString())
+        //        {
+        //            if (day.Date != null && day.Persones.Count > 0)
+        //            {
+        //                Period.Add(day);
+        //                day = new Day(date);
+        //            }
+        //        }
+        //        column += 2;
+        //        name = workcheet.Cell(row, column)
+        //                        .Value
+        //                        .ToString();
+        //        if (name != "" && persone.Name != name)
+        //        {
+        //            day.Persones.Add(persone);
+        //            persone = new Persone(name);
+        //        }
+        //        column += 2;
+        //        enter = workcheet.Cell(row, column)
+        //                        .Value
+        //                        .ToString();
+        //        persone.EnteredList.Add(enter);
+        //        column++;
+        //        _out = workcheet.Cell(row, column)
+        //                        .Value
+        //                        .ToString();
+        //        persone.GetOutList
+        //               .Add(_out);
+        //        column = 1;
+        //        row++;
+        //        if (date == "" && name == "" && enter == "" && _out == "")
+        //        {
+        //            day.Persones.Add(persone);
+        //            Period.Add(day);
+        //            break;
+        //        }
+        //    }
+        //    return Period;
+        //}
 
-        private void createPersonalReports(XLWorkbook report, List<Day> period)
-        {
-            List<string> personNames = new List<string>();
-            foreach (var item in period)
-            {
-                var current_names = item.Persones
-                                        .Select(s => s.Name)
-                                        .ToList();
-                var bufferPersoneNames = personNames;
-                personNames.AddRange(current_names.Except(bufferPersoneNames.Intersect(current_names)));
-            }
-            List<PersonalReport> personalReports = new List<PersonalReport>();
-            foreach (var item in personNames)
-            {
-                PersonalReport personalReport = new PersonalReport() {Name = item };
-                foreach (var day in period)
-                {
-                    var visit = new Visit()
-                    {
-                        Date = day.Date.ToShortDateString(),
-                        Enter = day.Persones
-                                   .Find(p => string.Equals(p.Name, personalReport.Name))
-                                  ?.EnteredList
-                                  ?.FirstOrDefault(),
-                        Outer = day.Persones
-                                   .Find(p => string.Equals(p.Name, personalReport.Name))
-                                  ?.GetOutList
-                                  ?.LastOrDefault()
-                    };
-                    personalReport.Visits
-                                  .Add(visit);
-                }
-                personalReports.Add(personalReport);
-            }
-            foreach (var item in personalReports)
-            {
-                var ws = report.Worksheets.Add(item.Name);
-                int row = 1, column = 1;
-                foreach (var visit in item.Visits)
-                {
-                    ws.Cell(row, column).SetValue<string>(visit.Date);
-                    column++;
-                    ws.Cell(row, column).SetValue<string>(item.Name);
-                    column++;
-                    ws.Cell(row, column).SetValue<string>(visit.Enter);
-                    column++;
-                    ws.Cell(row, column).SetValue<string>(visit.Outer);
-                    row++;
-                    column = 1;
-                }
-                ws.Columns().AdjustToContents();
-            }
-        }
+        //private void createPersonalReports(XLWorkbook report, List<Day> period)
+        //{
+        //    List<string> personNames = new List<string>();
+        //    foreach (var item in period)
+        //    {
+        //        var current_names = item.Persones
+        //                                .Select(s => s.Name)
+        //                                .ToList();
+        //        var bufferPersoneNames = personNames;
+        //        personNames.AddRange(current_names.Except(bufferPersoneNames.Intersect(current_names)));
+        //    }
+        //    List<PersonalReport> personalReports = new List<PersonalReport>();
+        //    foreach (var item in personNames)
+        //    {
+        //        PersonalReport personalReport = new PersonalReport() {Name = item };
+        //        foreach (var day in period)
+        //        {
+        //            var visit = new Visit()
+        //            {
+        //                Date = day.Date.ToShortDateString(),
+        //                Enter = day.Persones
+        //                           .Find(p => string.Equals(p.Name, personalReport.Name))
+        //                          ?.EnteredList
+        //                          ?.FirstOrDefault(),
+        //                Outer = day.Persones
+        //                           .Find(p => string.Equals(p.Name, personalReport.Name))
+        //                          ?.GetOutList
+        //                          ?.LastOrDefault()
+        //            };
+        //            personalReport.Visits
+        //                          .Add(visit);
+        //        }
+        //        personalReports.Add(personalReport);
+        //    }
+        //    foreach (var item in personalReports)
+        //    {
+        //        var ws = report.Worksheets.Add(item.Name);
+        //        int row = 1, column = 1;
+        //        foreach (var visit in item.Visits)
+        //        {
+        //            ws.Cell(row, column).SetValue<string>(visit.Date);
+        //            column++;
+        //            ws.Cell(row, column).SetValue<string>(item.Name);
+        //            column++;
+        //            ws.Cell(row, column).SetValue<string>(visit.Enter);
+        //            column++;
+        //            ws.Cell(row, column).SetValue<string>(visit.Outer);
+        //            row++;
+        //            column = 1;
+        //        }
+        //        ws.Columns().AdjustToContents();
+        //    }
+        //}
 
-        private void getValidReport(List<Day> period, string fileNameReport)
-        {
-            var report = new XLWorkbook();
-            var ws = report.Worksheets.Add("Свод");
-            int row = 1, column = 1;
-            string date = "";
-            period.Remove(period.FirstOrDefault());
-            foreach (var item in period)
-            {
-                date = item.Date.ToLongDateString();
-                foreach (var persone in item.Persones)
-                {
-                    ws.Cell(row, column).SetValue<string>(date);
-                    column += 2;
-                    ws.Cell(row, column).SetValue<string>(persone.Name);
-                    column++;
-                    ws.Cell(row, column).SetValue<string>(persone.EnteredList
-                                                                 .FirstOrDefault());
-                    column++;
-                    ws.Cell(row, column).SetValue<string>(persone.GetOutList
-                                                                 .LastOrDefault());
-                    column = 1;
-                    row++;
-                }
-            }
-            createPersonalReports(report, period);
-            report.SaveAs(fileNameReport.Substring(0,fileNameReport.IndexOf('.') - 1) + "_report" + ".xlsx");
-        }
+        //private void getValidReport(List<Day> period, string fileNameReport)
+        //{
+        //    var report = new XLWorkbook();
+        //    var ws = report.Worksheets.Add("Свод");
+        //    int row = 1, column = 1;
+        //    string date = "";
+        //    period.Remove(period.FirstOrDefault());
+        //    foreach (var item in period)
+        //    {
+        //        date = item.Date.ToLongDateString();
+        //        foreach (var persone in item.Persones)
+        //        {
+        //            ws.Cell(row, column).SetValue<string>(date);
+        //            column += 2;
+        //            ws.Cell(row, column).SetValue<string>(persone.Name);
+        //            column++;
+        //            ws.Cell(row, column).SetValue<string>(persone.EnteredList
+        //                                                         .FirstOrDefault());
+        //            column++;
+        //            ws.Cell(row, column).SetValue<string>(persone.GetOutList
+        //                                                         .LastOrDefault());
+        //            column = 1;
+        //            row++;
+        //        }
+        //    }
+        //    createPersonalReports(report, period);
+        //    report.SaveAs(fileNameReport.Substring(0,fileNameReport.IndexOf('.') - 1) + "_report" + ".xlsx");
+        //}
 
         public MainWindow()
         {
