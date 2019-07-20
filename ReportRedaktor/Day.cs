@@ -11,12 +11,10 @@ namespace ReportRedaktor
         public DateTime Date { get; set; }
         public List<Persone> Persones { get; set; }
 
-        public Day(string date)
+        public Day(DateTime date)
         {
             Persones = new List<Persone>();
-            Date = DateTime.TryParse(date, out var _date) == false
-                 ? DateTime.Parse("01.01.1")
-                 : _date;            
+            Date = date;            
         }
     }
 }

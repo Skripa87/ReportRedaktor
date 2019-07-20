@@ -170,8 +170,10 @@ namespace ReportRedaktor
         {
             if (string.IsNullOrEmpty(fileNameExcel))
                 return;
-            var work_manager = new Work_manager();
-            var result = work_manager.GetWork_Events(fileNameExcel);
+            var report_Manager = new Report_manager(fileNameExcel);
+            var start = DateTime.Parse("01.07.2019");
+            var end = DateTime.Parse("31.07.2019");
+            var workbook = report_Manager.GetReportForPeriod(start,end);
             //List<Day> Period = getPeriod(fileNameExcel);
             //getValidReport(Period, fileNameExcel);
         }

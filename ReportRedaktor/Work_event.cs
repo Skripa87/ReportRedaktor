@@ -9,19 +9,22 @@ namespace ReportRedaktor
     public enum Direction { IN, OUT}
     public class Work_event
     {
-        public DateTime DateAndTime { get; set; }
+        public DateTime Date { get; set; }
+        public TimeSpan Time { get; set; }
         public string Point { get; set; }
         public Direction Direction { get; set; }
         public string Name { get; set; }
         public int Number { get; set; }
         public string UserName { get; set; }
 
-        public Work_event(string dateAndTime, string point, string direction, string name, string number, string userName)
+        public Work_event(string date, string time, string point, string direction, string name, string number, string userName)
         {
-            var date = new DateTime();
-            DateAndTime = DateTime.TryParse(dateAndTime, out date)
-                        ? date
+            Date = DateTime.TryParse(date, out var _date)
+                        ? _date
                         : DateTime.MinValue;
+            Time = TimeSpan.TryParse(time, out var _time)
+                        ? _time
+                        : TimeSpan.MinValue;
             Point = point;
             Direction = direction.Contains("ы")
                       ? Direction.OUT
