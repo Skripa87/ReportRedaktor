@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Security.Cryptography;
 using OfficeOpenXml;
 using ClosedXML.Excel;
 
@@ -78,28 +79,80 @@ namespace ReportRedaktor
         public XLWorkbook GetReportForPeriod(DateTime start, DateTime end)
         {
             var persones = GetPersones();
+            persones.RemoveAll(p => p.Name
+                                        .ToLower()
+                                        .Contains("гость") ||
+                                    string.IsNullOrEmpty(p.Name));
+            persones.Sort();
             var newFileName = File_name.Substring(0, File_name.Length - 5) + "_new.xlsx";
             XLWorkbook workbook = new XLWorkbook();
             var worksheet = workbook.AddWorksheet("Сводная_таблица");
             var range = worksheet.Range("A1:D1");
-            range.Merge().Value = "Сводная таблица";
-            worksheet.Cell("B3").Value = "Период";
-            worksheet.Cell("C3").Value = start.Month.ToString();
+            range.Merge()
+                 .Value = "Сводная таблица";
+            worksheet.Cell("B3")
+                     .Value = "Период";
+            worksheet.Cell("C3")
+                     .Value = start.Month
+                                   .ToString();
             range = worksheet.Range("A5:A6");
-            range.Merge().SetValue<string>("Дата");
+            range.Merge()
+                 .SetValue<string>("Дата");
             range = worksheet.Range("B5:B6");
-            range.Merge().SetValue<string>("ФИО");
+            range.Merge()
+                 .SetValue<string>("ФИО");
             range = worksheet.Range("C5:D5");
-            range.Merge().SetValue<string>("События");
-            worksheet.Cell("C6").Value = "приход";
-            worksheet.Cell("D6").Value = "уход";
-
+            range.Merge()
+                 .SetValue<string>("События");
+            worksheet.Cell("C6")
+                     .Value = "приход";
+            worksheet.Cell("D6")
+                     .Value = "уход";
+            int rowNumber = 8;
+            end = end.AddDays(1);
             while (!DateTime.Equals(start, end))
             {
+                foreach (var item in persones)
+                {
+                    var currentRow = worksheet.Row(rowNumber);
+                    currentRow.Cell(1)
+                              .SetValue<DateTime>(start);
+                    currentRow.Cell(2)
+                              .SetValue(item.Name);
+                    var buffer = item.VisitList
+                                     .Find(v => DateTime.Equals(v.Date, start))
+                                    ?.Enter;
+                    var enter = buffer != null && buffer != TimeSpan.MinValue 
+                              ? buffer.ToString()
+                              : "";
+                    buffer = item.VisitList
+                                 .Find(v => DateTime.Equals(v.Date, start))
+                                ?.Outer;
+                    var outer = buffer != null && buffer != TimeSpan.MinValue
+                              ? buffer.ToString()
+                              : "";
+                    if (string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer))
+                    {
+                        range = worksheet.Range(rowNumber, 3, rowNumber, 4);
+                        range.Merge()
+                             .SetValue("Не зарегистрирован");
+                    }
+                    else
+                    {
+                        currentRow.Cell(3)
+                                  .SetValue(enter);
+                        currentRow.Cell(4)
+                                  .SetValue(outer);
+                    }
+                    rowNumber++;
+                }
                 start = start.AddDays(1);
             }
             workbook.SaveAs(newFileName);
             return workbook;
         }
+
+        public 
+
     }
 }

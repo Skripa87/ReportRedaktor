@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ReportRedaktor
 {
-    public class Persone
+    public class Persone:IComparable
     {
         public string Name { get; set; }
         public List<Visit> VisitList { get; set; }
@@ -14,6 +14,11 @@ namespace ReportRedaktor
         {
             Name = name;
             VisitList = new List<Visit>();
+        }
+
+        public int CompareTo(object obj)
+        {
+            return string.Compare(Name, ((Persone)obj).Name);
         }
     }
 }
