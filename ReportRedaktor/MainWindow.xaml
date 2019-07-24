@@ -5,10 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ReportRedaktor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="100" Width="391">
-    <Grid>
-        <Button Content="Выполнить" HorizontalAlignment="Left" Height="23" Margin="10,20,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="0.5,0.478" Click="Button_Click"/>
-        <Button Content="" HorizontalAlignment="Left" Margin="331,23,0,0" VerticalAlignment="Top" Width="42" Click="Button_Click_1"/>
+        Title="Программулька" Height="106.137" Width="395.693">
+    <Grid Margin="0,0,2,2">
+        <Button Content="Выполнить" HorizontalAlignment="Left" Height="23" Margin="10,20,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="0.5,0.478" Click="Button_Click">
+            <Button.Effect>
+                <DropShadowEffect/>
+            </Button.Effect>
+        </Button>
+        <Button Content="Выбрать файл" HorizontalAlignment="Left" Margin="239,20,0,0" VerticalAlignment="Top" Width="134" Click="Button_Click_1" Height="23" RenderTransformOrigin="0.5,0.5" Cursor="Hand">
+            <Button.Effect>
+                <DropShadowEffect/>
+            </Button.Effect>
+        </Button>
+        <ProgressBar Name="progressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="10" Margin="10,58,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787"/>
         <!--<TextBox Name="fileName" HorizontalAlignment="Left" Height="23" Margin="223,20,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="150"/>-->
 
     </Grid>
