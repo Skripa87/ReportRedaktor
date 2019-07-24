@@ -33,7 +33,7 @@ namespace ReportRedaktor
                                             .First();
                 var start = workscheet.Dimension.Start;
                 var end = workscheet.Dimension.End;
-                for(int row = 9; row < end.Row; row++)
+                for (int row = 9; row < end.Row; row++)
                 {
                     var workEvent = new Work_event(workscheet.GetValue(row, 1).ToString(),
                                                    workscheet.GetValue(row, 2).ToString(),
@@ -44,7 +44,7 @@ namespace ReportRedaktor
                                                    workscheet.GetValue(row, 8)?.ToString() ?? "");
                     work_events.Add(workEvent);
                 }
-            }            
+            }
             return work_events;
         }
 
@@ -53,7 +53,7 @@ namespace ReportRedaktor
             var persones = new List<Persone>();
             var work_events = GetWork_Events();
             var count = work_events.Count;
-            while(work_events.Count > 0)
+            while (work_events.Count > 0)
             {
                 var currentvalueprogressbar = (count - work_events.Count) * 25 / count;
                 progress.Value = currentvalueprogressbar;
@@ -71,13 +71,13 @@ namespace ReportRedaktor
                               ? enters.Min(e => e.Time)
                               : TimeSpan.MinValue;
                     var outers = events.FindAll(e => e.Direction == Direction.OUT);
-                    var outer = outers.Count == 0 || 
-                               (enters.Count > 0 && 
-                                enters.Any(e=>e.Time > outers.Max(o=>o.Time)))
-                              ? (enters.Max(e=>e.Time) > TimeSpan.Parse("17:00:00")) 
+                    var outer = outers.Count == 0 ||
+                               (enters.Count > 0 &&
+                                enters.Any(e => e.Time > outers.Max(o => o.Time)))
+                              ? (enters.Max(e => e.Time) > TimeSpan.Parse("17:00:00"))
                                 ? enters.Max(e => e.Time)
                                 : TimeSpan.MinValue
-                              : outers.Max(e=>e.Time);
+                              : outers.Max(e => e.Time);
                     var visit = new Visit(curent_date, enter, outer);
                     persone.VisitList.Add(visit);
                 }
@@ -100,17 +100,34 @@ namespace ReportRedaktor
             var range = worksheet.Range("A1:D1");
             range.Merge()
                  .Value = "Сводная таблица";
+            range.Style
+                 .Font
+                 .Bold = true;
+            range.Style.Font.FontColor = XLColor.Black;
+            range.Style.Font.FontName = "Arial Cyr";
+            range.Style.Font.Underline = XLFontUnderlineValues.Single;
             worksheet.Cell("B3")
                      .Value = "Период";
+            worksheet.Cell("B3").Style
+                                .Font
+                                .Italic = true; 
             worksheet.Cell("C3")
                      .Value = start.Month
                                    .ToString();
             range = worksheet.Range("A5:A6");
             range.Merge()
                  .SetValue<string>("Дата");
+            range.Style.Font.FontSize = 10;
+            range.Style.Font.FontName = "Arial Cyr";
+            range.Style.Font.SetVerticalAlignment(XLFontVerticalTextAlignmentValues.Baseline);
+            range.Style.Font.Bold = true;
             range = worksheet.Range("B5:B6");
             range.Merge()
                  .SetValue<string>("ФИО");
+            range.Style.Font.FontSize = 10;
+            range.Style.Font.FontName = "Arial Cyr";
+            range.Style.Font.SetVerticalAlignment(XLFontVerticalTextAlignmentValues.Baseline);
+            range.Style.Font.Bold = true;
             range = worksheet.Range("C5:D5");
             range.Merge()
                  .SetValue<string>("События");
@@ -132,7 +149,7 @@ namespace ReportRedaktor
                     var buffer = item.VisitList
                                      .Find(v => DateTime.Equals(v.Date, start))
                                     ?.Enter;
-                    var enter = buffer != null && buffer != TimeSpan.MinValue 
+                    var enter = buffer != null && buffer != TimeSpan.MinValue
                               ? buffer.ToString()
                               : "";
                     buffer = item.VisitList
@@ -171,9 +188,9 @@ namespace ReportRedaktor
             progress.Value = 75;
             foreach (var persone in persones)
             {
-                var worksheet = workbook.AddWorksheet(persone.Name.Substring(0,persone.Name
-                                                                                      .Length >= 31 
-                                                                              ? 31 
+                var worksheet = workbook.AddWorksheet(persone.Name.Substring(0, persone.Name
+                                                                                      .Length >= 31
+                                                                              ? 31
                                                                               : persone.Name
                                                                                        .Length));
                 var range = worksheet.Range("A1:D1");
@@ -192,6 +209,18 @@ namespace ReportRedaktor
                 range = worksheet.Range("C5:D5");
                 range.Merge()
                      .SetValue("События");
+                range = worksheet.Range("F5:G5");
+                range.Merge().SetValue("Время");
+                range = worksheet.Range("H5:I5");
+                range.Merge().SetValue("Штрафы");
+                worksheet.Cell("F6")
+                         .SetValue("Поздно");
+                worksheet.Cell("G6")
+                         .SetValue("Рано");
+                worksheet.Cell("H6")
+                         .SetValue("Поздно");
+                worksheet.Cell("I6")
+                         .SetValue("Рано");
                 worksheet.Cell("C6")
                          .SetValue("приход");
                 worksheet.Cell("D6")
@@ -229,6 +258,30 @@ namespace ReportRedaktor
                         row.Cell(3).SetValue(enter);
                         row.Cell(4).SetValue(outer);
                     }
+                    if (outer == "")
+                    {
+                        row.Cell(7)
+                           .SetValue("");
+                    }
+                    else
+                        if (TimeSpan.Parse(outer) < TimeSpan.Parse("18:00:00"))
+                    {
+                        row.Cell(7)
+                           .SetValue((TimeSpan.Parse("18:00:00") - TimeSpan.Parse(outer))
+                                                                           .ToString());
+                    }
+                    if (enter == "")
+                    {
+                        row.Cell(7)
+                              .SetValue("");
+                    }
+                    else 
+                    if(TimeSpan.Parse(enter) > TimeSpan.Parse("9:00:00"))
+                    {
+                        row.Cell(6)
+                           .SetValue((TimeSpan.Parse(enter) - TimeSpan.Parse("9:00:00"))
+                                                                      .ToString());
+                    }
                     currentRow++;
                     start = start.AddDays(1);
                 }
@@ -241,7 +294,7 @@ namespace ReportRedaktor
         public void GetReport(DateTime start, DateTime end, ProgressBar progressBar)
         {
             var workBook = GetReportForPeriod(start, end, out var persones, progressBar);
-            AddPersonalReports(workBook,persones,start,end, progressBar);
+            AddPersonalReports(workBook, persones, start, end, progressBar);
             progressBar.Value = 100;
         }
     }
