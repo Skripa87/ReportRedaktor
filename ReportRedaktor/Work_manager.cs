@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Security.Cryptography;
+using System.Windows.Controls;
 using OfficeOpenXml;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Bibliography;
 
 namespace ReportRedaktor
 {
@@ -46,12 +48,16 @@ namespace ReportRedaktor
             return work_events;
         }
 
-        private List<Persone> GetPersones()
+        private List<Persone> GetPersones(ProgressBar progress)
         {
             var persones = new List<Persone>();
             var work_events = GetWork_Events();
+            var count = work_events.Count;
             while(work_events.Count > 0)
             {
+                var currentvalueprogressbar = (count - work_events.Count) * 25 / count;
+                progress.Value = currentvalueprogressbar;
+                progress.UpdateLayout();
                 var persone = new Persone(work_events.FirstOrDefault().UserName);
                 var personeEvents = work_events.FindAll(e => string.Equals(e.UserName, persone.Name));
                 work_events.RemoveAll(e => string.Equals(e.UserName, persone.Name));
@@ -60,14 +66,18 @@ namespace ReportRedaktor
                     var curent_date = personeEvents.FirstOrDefault().Date;
                     var events = personeEvents.FindAll(p => DateTime.Equals(p.Date, curent_date));
                     personeEvents.RemoveAll(p => DateTime.Equals(p.Date, curent_date));
-                    var enter = events.Count(e => e.Direction == Direction.IN) > 0
-                              ? events.FindAll(e => e.Direction == Direction.IN)
-                                      .Min(e => e.Time)
+                    var enters = events.FindAll(e => e.Direction == Direction.IN);
+                    var enter = enters.Count > 0
+                              ? enters.Min(e => e.Time)
                               : TimeSpan.MinValue;
-                    var outer = events.Count(e => e.Direction == Direction.OUT) > 0
-                              ? events.FindAll(e => e.Direction == Direction.OUT)
-                                      .Max(m => m.Time)
-                              :TimeSpan.MinValue;
+                    var outers = events.FindAll(e => e.Direction == Direction.OUT);
+                    var outer = outers.Count == 0 || 
+                               (enters.Count > 0 && 
+                                enters.Any(e=>e.Time > outers.Max(o=>o.Time)))
+                              ? (enters.Max(e=>e.Time) > TimeSpan.Parse("17:00:00")) 
+                                ? enters.Max(e => e.Time)
+                                : TimeSpan.MinValue
+                              : outers.Max(e=>e.Time);
                     var visit = new Visit(curent_date, enter, outer);
                     persone.VisitList.Add(visit);
                 }
@@ -76,9 +86,9 @@ namespace ReportRedaktor
             return persones;
         }
 
-        public XLWorkbook GetReportForPeriod(DateTime start, DateTime end)
+        private XLWorkbook GetReportForPeriod(DateTime start, DateTime end, out List<Persone> persones, ProgressBar progress)
         {
-            var persones = GetPersones();
+            persones = GetPersones(progress);
             persones.RemoveAll(p => p.Name
                                         .ToLower()
                                         .Contains("гость") ||
@@ -148,11 +158,91 @@ namespace ReportRedaktor
                 }
                 start = start.AddDays(1);
             }
+            worksheet.Columns().AdjustToContents();
+            worksheet.Rows().AdjustToContents();
             workbook.SaveAs(newFileName);
+            progress.Value = 50;
+            progress.UpdateLayout();
             return workbook;
         }
 
-        public 
+        private void AddPersonalReports(XLWorkbook workbook, List<Persone> persones, DateTime startPeriod, DateTime endPeriod, ProgressBar progress)
+        {
+            progress.Value = 75;
+            foreach (var persone in persones)
+            {
+                var worksheet = workbook.AddWorksheet(persone.Name.Substring(0,persone.Name
+                                                                                      .Length >= 31 
+                                                                              ? 31 
+                                                                              : persone.Name
+                                                                                       .Length));
+                var range = worksheet.Range("A1:D1");
+                range.Merge()
+                     .SetValue("Журнал событий входа-выхода");
+                worksheet.Cell("B3")
+                         .SetValue("Период");
+                worksheet.Cell("C3")
+                         .SetValue(startPeriod.Month.ToString());
+                range = worksheet.Range("A5:A6");
+                range.Merge()
+                     .SetValue("Дата");
+                range = worksheet.Range("B5:B6");
+                range.Merge()
+                     .SetValue("ФИО");
+                range = worksheet.Range("C5:D5");
+                range.Merge()
+                     .SetValue("События");
+                worksheet.Cell("C6")
+                         .SetValue("приход");
+                worksheet.Cell("D6")
+                         .SetValue("уход");
+                var currentRow = 7;
+                var start = startPeriod;
+                var end = endPeriod.AddDays(1);
+                while (start != end)
+                {
+                    var row = worksheet.Row(currentRow);
+                    row.Cell(1)
+                       .SetValue(start.ToLongDateString());
+                    row.Cell(2)
+                       .SetValue(persone.Name);
+                    var bufer = persone.VisitList
+                                       .Find(v => DateTime.Equals(start, v.Date))
+                                      ?.Enter;
+                    var enter = bufer == null || bufer == TimeSpan.MinValue
+                              ? ""
+                              : bufer.ToString();
+                    bufer = persone.VisitList
+                                   .Find(v => DateTime.Equals(start, v.Date))
+                                   ?.Outer;
+                    var outer = bufer == null || bufer == TimeSpan.MinValue
+                              ? ""
+                              : bufer.ToString();
+                    if (string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer))
+                    {
+                        range = worksheet.Range(currentRow, 3, currentRow, 4);
+                        range.Merge()
+                             .SetValue("Не зарегистрирован");
+                    }
+                    else
+                    {
+                        row.Cell(3).SetValue(enter);
+                        row.Cell(4).SetValue(outer);
+                    }
+                    currentRow++;
+                    start = start.AddDays(1);
+                }
+                worksheet.Columns().AdjustToContents();
+                worksheet.Rows().AdjustToContents();
+            }
+            workbook.Save();
+        }
 
+        public void GetReport(DateTime start, DateTime end, ProgressBar progressBar)
+        {
+            var workBook = GetReportForPeriod(start, end, out var persones, progressBar);
+            AddPersonalReports(workBook,persones,start,end, progressBar);
+            progressBar.Value = 100;
+        }
     }
 }
