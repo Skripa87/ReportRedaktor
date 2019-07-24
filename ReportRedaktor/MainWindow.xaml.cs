@@ -181,9 +181,9 @@ namespace ReportRedaktor
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.FileName = "Document"; // Default file name
-            dlg.DefaultExt = ".xlsx"; // Default file extension
-            dlg.Filter = "Text documents (.xlsx)|*.xlsx"; // Filter files by extension
+            dlg.FileName = "Document"; 
+            dlg.DefaultExt = ".xlsx"; 
+            dlg.Filter = "Text documents (.xlsx)|*.xlsx"; 
 
             // Show open file dialog box
             Nullable<bool> result = dlg.ShowDialog();
