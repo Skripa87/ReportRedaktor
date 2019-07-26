@@ -10,6 +10,8 @@ namespace ReportRedaktor
     {
         public string Name { get; set; }
         public List<Visit> VisitList { get; set; }
+        public TimeSpan Startday { get; set; }
+        public TimeSpan Endday { get; set; }
         public Persone(string name)
         {
             Name = name;

@@ -80,10 +80,66 @@ namespace ReportRedaktor
                               : outers.Max(e => e.Time);
                     var visit = new Visit(curent_date, enter, outer);
                     persone.VisitList.Add(visit);
+                    if (persone.Name
+                               .ToLower()
+                               .Contains("егорова"))
+                    {
+                        persone.Startday = TimeSpan.Parse("08:00:00");
+                        persone.Endday = TimeSpan.Parse("17:00:00");
+                    }
+                    else
+                    {
+                        persone.Startday = TimeSpan.Parse("09:00:00");
+                        persone.Endday = TimeSpan.Parse("18:00:00");
+                    }
                 }
                 persones.Add(persone);
             }
             return persones;
+        }
+
+        private void SetFormat<T>(IXLRange range, T value)
+        {
+            range.Merge();
+            range.Style.Font.FontColor = XLColor.Black;
+            range.Style.Font.FontSize = 10;
+            range.Style.Font.FontName = "Arial Cyr";
+            range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            range.Style.Font.Bold = true;
+            range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            range.Style
+                 .Border
+                 .TopBorder = XLBorderStyleValues.Thin;
+            range.Style
+                 .Border
+                 .RightBorder = XLBorderStyleValues.Thin;
+            range.Style
+                 .Border
+                 .LeftBorder = XLBorderStyleValues.Thin;
+            range.Style
+                 .Border
+                 .BottomBorder = XLBorderStyleValues.Thin;
+            range.SetValue(value);
+        }
+
+        private void SetFormat<T>(IXLCell cell, T value)
+        {
+            cell.Style
+                .Border
+                .TopBorder = XLBorderStyleValues.Thin;
+            cell.Style
+                .Border
+                .BottomBorder = XLBorderStyleValues.Thin;
+            cell.Style
+                .Border
+                .LeftBorder = XLBorderStyleValues.Thin;
+            cell.Style
+                .Border
+                .RightBorder = XLBorderStyleValues.Thin;
+            cell.Style
+                .Font
+                .FontName = "Calibri";
+            cell.SetValue(value);
         }
 
         private XLWorkbook GetReportForPeriod(DateTime start, DateTime end, out List<Persone> persones, ProgressBar progress)
@@ -98,43 +154,35 @@ namespace ReportRedaktor
             XLWorkbook workbook = new XLWorkbook();
             var worksheet = workbook.AddWorksheet("Сводная_таблица");
             var range = worksheet.Range("A1:D1");
-            range.Merge()
-                 .Value = "Сводная таблица";
+            SetFormat(range, "Сводная таблица");
             range.Style
                  .Font
-                 .Bold = true;
-            range.Style.Font.FontColor = XLColor.Black;
-            range.Style.Font.FontName = "Arial Cyr";
-            range.Style.Font.Underline = XLFontUnderlineValues.Single;
+                 .Underline = XLFontUnderlineValues.Single;
             worksheet.Cell("B3")
                      .Value = "Период";
-            worksheet.Cell("B3").Style
-                                .Font
-                                .Italic = true; 
+            worksheet.Cell("B3")
+                     .Style
+                     .Font
+                     .Italic = true;
+            worksheet.Cell("B3")
+                     .Style
+                     .Alignment
+                     .Horizontal = XLAlignmentHorizontalValues.Center;
             worksheet.Cell("C3")
                      .Value = start.Month
                                    .ToString();
+            worksheet.Cell("C3")
+                     .Style
+                     .Alignment
+                     .Horizontal = XLAlignmentHorizontalValues.Center;
             range = worksheet.Range("A5:A6");
-            range.Merge()
-                 .SetValue<string>("Дата");
-            range.Style.Font.FontSize = 10;
-            range.Style.Font.FontName = "Arial Cyr";
-            range.Style.Font.SetVerticalAlignment(XLFontVerticalTextAlignmentValues.Baseline);
-            range.Style.Font.Bold = true;
+            SetFormat(range, "Дата");
             range = worksheet.Range("B5:B6");
-            range.Merge()
-                 .SetValue<string>("ФИО");
-            range.Style.Font.FontSize = 10;
-            range.Style.Font.FontName = "Arial Cyr";
-            range.Style.Font.SetVerticalAlignment(XLFontVerticalTextAlignmentValues.Baseline);
-            range.Style.Font.Bold = true;
+            SetFormat(range, "ФИО");
             range = worksheet.Range("C5:D5");
-            range.Merge()
-                 .SetValue<string>("События");
-            worksheet.Cell("C6")
-                     .Value = "приход";
-            worksheet.Cell("D6")
-                     .Value = "уход";
+            SetFormat(range, "События");
+            SetFormat(worksheet.Cell("C6"), "приход");
+            SetFormat(worksheet.Cell("D6"), "уход");
             int rowNumber = 8;
             end = end.AddDays(1);
             while (!DateTime.Equals(start, end))
@@ -142,10 +190,8 @@ namespace ReportRedaktor
                 foreach (var item in persones)
                 {
                     var currentRow = worksheet.Row(rowNumber);
-                    currentRow.Cell(1)
-                              .SetValue<DateTime>(start);
-                    currentRow.Cell(2)
-                              .SetValue(item.Name);
+                    SetFormat(currentRow.Cell(1), start.ToLongDateString());
+                    SetFormat(currentRow.Cell(2), item.Name);
                     var buffer = item.VisitList
                                      .Find(v => DateTime.Equals(v.Date, start))
                                     ?.Enter;
@@ -161,15 +207,12 @@ namespace ReportRedaktor
                     if (string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer))
                     {
                         range = worksheet.Range(rowNumber, 3, rowNumber, 4);
-                        range.Merge()
-                             .SetValue("Не зарегистрирован");
+                        SetFormat(range, "Не зарегистрирован");
                     }
                     else
                     {
-                        currentRow.Cell(3)
-                                  .SetValue(enter);
-                        currentRow.Cell(4)
-                                  .SetValue(outer);
+                        SetFormat(currentRow.Cell(3), enter);
+                        SetFormat(currentRow.Cell(4), outer);
                     }
                     rowNumber++;
                 }
@@ -194,47 +237,36 @@ namespace ReportRedaktor
                                                                               : persone.Name
                                                                                        .Length));
                 var range = worksheet.Range("A1:D1");
-                range.Merge()
-                     .SetValue("Журнал событий входа-выхода");
+                SetFormat(range, "Журнал событий входа-выхода");
                 worksheet.Cell("B3")
-                         .SetValue("Период");
+                         .SetValue("Период")
+                         .Style
+                         .Font
+                         .Italic = true;
                 worksheet.Cell("C3")
-                         .SetValue(startPeriod.Month.ToString());
-                range = worksheet.Range("A5:A6");
-                range.Merge()
-                     .SetValue("Дата");
-                range = worksheet.Range("B5:B6");
-                range.Merge()
-                     .SetValue("ФИО");
-                range = worksheet.Range("C5:D5");
-                range.Merge()
-                     .SetValue("События");
-                range = worksheet.Range("F5:G5");
-                range.Merge().SetValue("Время");
-                range = worksheet.Range("H5:I5");
-                range.Merge().SetValue("Штрафы");
-                worksheet.Cell("F6")
-                         .SetValue("Поздно");
-                worksheet.Cell("G6")
-                         .SetValue("Рано");
-                worksheet.Cell("H6")
-                         .SetValue("Поздно");
-                worksheet.Cell("I6")
-                         .SetValue("Рано");
-                worksheet.Cell("C6")
-                         .SetValue("приход");
-                worksheet.Cell("D6")
-                         .SetValue("уход");
+                         .SetValue(startPeriod.Month.ToString())
+                         .Style
+                         .Font
+                         .Italic = true;
+                SetFormat(worksheet.Range("A5:A6"), "Дата");
+                SetFormat(worksheet.Range("B5:B6"), "ФИО");
+                SetFormat(worksheet.Range("C5:D5"), "События");
+                SetFormat(worksheet.Range("F5:G5"), "Время");
+                SetFormat(worksheet.Range("H5:I5"), "Штрафы");
+                SetFormat(worksheet.Cell("F6"), "Поздно");
+                SetFormat(worksheet.Cell("G6"), "Рано");
+                SetFormat(worksheet.Cell("H6"), "Поздно");
+                SetFormat(worksheet.Cell("I6"), "Рано");
+                SetFormat(worksheet.Cell("C6"), "приход");
+                SetFormat(worksheet.Cell("D6"), "уход");
                 var currentRow = 7;
                 var start = startPeriod;
                 var end = endPeriod.AddDays(1);
                 while (start != end)
                 {
                     var row = worksheet.Row(currentRow);
-                    row.Cell(1)
-                       .SetValue(start.ToLongDateString());
-                    row.Cell(2)
-                       .SetValue(persone.Name);
+                    SetFormat(row.Cell(1), start.ToLongDateString());
+                    SetFormat(row.Cell(2), persone.Name);
                     var bufer = persone.VisitList
                                        .Find(v => DateTime.Equals(start, v.Date))
                                       ?.Enter;
@@ -249,38 +281,35 @@ namespace ReportRedaktor
                               : bufer.ToString();
                     if (string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer))
                     {
-                        range = worksheet.Range(currentRow, 3, currentRow, 4);
-                        range.Merge()
-                             .SetValue("Не зарегистрирован");
+                        SetFormat(worksheet.Range(currentRow, 3, currentRow, 4), "Не зарегистрирован");
                     }
                     else
                     {
-                        row.Cell(3).SetValue(enter);
-                        row.Cell(4).SetValue(outer);
+                        SetFormat(row.Cell(3), enter);
+                        SetFormat(row.Cell(4), outer);
                     }
                     if (outer == "")
                     {
-                        row.Cell(7)
-                           .SetValue("");
+                        SetFormat(row.Cell(7), "");
                     }
                     else
-                        if (TimeSpan.Parse(outer) < TimeSpan.Parse("18:00:00"))
+                    if (TimeSpan.Parse(outer) < persone.Endday)
                     {
-                        row.Cell(7)
-                           .SetValue((TimeSpan.Parse("18:00:00") - TimeSpan.Parse(outer))
-                                                                           .ToString());
+                        SetFormat(row.Cell(7), (persone.Endday - TimeSpan.Parse(outer)).ToString());
                     }
                     if (enter == "")
                     {
-                        row.Cell(7)
-                              .SetValue("");
+                        SetFormat(row.Cell(7), "");
                     }
-                    else 
-                    if(TimeSpan.Parse(enter) > TimeSpan.Parse("9:00:00"))
+                    else
+                    if (TimeSpan.Parse(enter) > persone.Startday)
                     {
-                        row.Cell(6)
-                           .SetValue((TimeSpan.Parse(enter) - TimeSpan.Parse("9:00:00"))
-                                                                      .ToString());
+                        SetFormat(row.Cell(6), (TimeSpan.Parse(enter) - persone.Startday).ToString());
+                        if ((TimeSpan.Parse(enter) - persone.Startday).Minutes > 15)
+                        {
+                            var value = ((TimeSpan.Parse(enter) - persone.Startday).Minutes/15)*
+                            SetFormat(row.Cell(6),)
+                        }
                     }
                     currentRow++;
                     start = start.AddDays(1);
