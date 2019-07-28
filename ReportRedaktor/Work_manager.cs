@@ -59,6 +59,18 @@ namespace ReportRedaktor
                 progress.Value = currentvalueprogressbar;
                 progress.UpdateLayout();
                 var persone = new Persone(work_events.FirstOrDefault().UserName);
+                if (persone.Name
+                    .ToLower()
+                    .Contains("егорова"))
+                {
+                    persone.Startday = TimeSpan.Parse("08:00:00");
+                    persone.Endday = TimeSpan.Parse("17:00:00");
+                }
+                else
+                {
+                    persone.Startday = TimeSpan.Parse("09:00:00");
+                    persone.Endday = TimeSpan.Parse("18:00:00");
+                }
                 var personeEvents = work_events.FindAll(e => string.Equals(e.UserName, persone.Name));
                 work_events.RemoveAll(e => string.Equals(e.UserName, persone.Name));
                 while (personeEvents.Count > 0)
@@ -74,24 +86,12 @@ namespace ReportRedaktor
                     var outer = outers.Count == 0 ||
                                (enters.Count > 0 &&
                                 enters.Any(e => e.Time > outers.Max(o => o.Time)))
-                              ? (enters.Max(e => e.Time) > TimeSpan.Parse("17:00:00"))
+                              ? (enters.Max(e => e.Time) > persone.Endday)
                                 ? enters.Max(e => e.Time)
                                 : TimeSpan.MinValue
                               : outers.Max(e => e.Time);
                     var visit = new Visit(curent_date, enter, outer);
                     persone.VisitList.Add(visit);
-                    if (persone.Name
-                               .ToLower()
-                               .Contains("егорова"))
-                    {
-                        persone.Startday = TimeSpan.Parse("08:00:00");
-                        persone.Endday = TimeSpan.Parse("17:00:00");
-                    }
-                    else
-                    {
-                        persone.Startday = TimeSpan.Parse("09:00:00");
-                        persone.Endday = TimeSpan.Parse("18:00:00");
-                    }
                 }
                 persones.Add(persone);
             }
@@ -262,8 +262,13 @@ namespace ReportRedaktor
                 var currentRow = 7;
                 var start = startPeriod;
                 var end = endPeriod.AddDays(1);
+                bool hollyday = false;
                 while (start != end)
                 {
+                    hollyday = (start.DayOfWeek == DayOfWeek.Sunday ||
+                                start.DayOfWeek == DayOfWeek.Saturday) 
+                             ? true
+                             : false;
                     var row = worksheet.Row(currentRow);
                     SetFormat(row.Cell(1), start.ToLongDateString());
                     SetFormat(row.Cell(2), persone.Name);
@@ -279,7 +284,9 @@ namespace ReportRedaktor
                     var outer = bufer == null || bufer == TimeSpan.MinValue
                               ? ""
                               : bufer.ToString();
-                    if (string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer))
+                    //***************************************************************************//
+                    if (string.IsNullOrEmpty(enter) && 
+                        string.IsNullOrEmpty(outer) && !hollyday) 
                     {
                         SetFormat(worksheet.Range(currentRow, 3, currentRow, 4), "Не зарегистрирован");
                     }
@@ -288,28 +295,43 @@ namespace ReportRedaktor
                         SetFormat(row.Cell(3), enter);
                         SetFormat(row.Cell(4), outer);
                     }
-                    if (outer == "")
+                    //*************************************************************************************//
+                    if (string.IsNullOrEmpty(enter) && !string.IsNullOrEmpty(outer) && !hollyday)
                     {
-                        SetFormat(row.Cell(7), "");
+                        SetFormat(row.Cell(6),"Не отметился");
+                        SetFormat(row.Cell(8),100);
                     }
-                    else
-                    if (TimeSpan.Parse(outer) < persone.Endday)
-                    {
-                        SetFormat(row.Cell(7), (persone.Endday - TimeSpan.Parse(outer)).ToString());
-                    }
-                    if (enter == "")
-                    {
-                        SetFormat(row.Cell(7), "");
-                    }
-                    else
-                    if (TimeSpan.Parse(enter) > persone.Startday)
+                    else if (!string.IsNullOrEmpty(enter) && TimeSpan.Parse(enter) > persone.Startday && !hollyday)
                     {
                         SetFormat(row.Cell(6), (TimeSpan.Parse(enter) - persone.Startday).ToString());
                         if ((TimeSpan.Parse(enter) - persone.Startday).Minutes > 15)
                         {
-                            var value = ((TimeSpan.Parse(enter) - persone.Startday).Minutes/15)*
-                            SetFormat(row.Cell(6),)
+                            SetFormat(row.Cell(8), 100);
                         }
+                        else
+                        {
+                            SetFormat(row.Cell(8), 0);
+                        }
+                    }
+                    else
+                    {
+                        SetFormat(row.Cell(6), "");
+                        SetFormat(row.Cell(8), 0);
+                    }
+                    if (!string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer) && !hollyday)
+                    {
+                        SetFormat(row.Cell(7), "Не отметился");
+                        SetFormat(row.Cell(9), 150);
+                    }
+                    else if (!string.IsNullOrEmpty(outer) && TimeSpan.Parse(outer) < persone.Endday && !hollyday)
+                    {
+                        SetFormat(row.Cell(7), (persone.Endday - TimeSpan.Parse(outer)).ToString());
+                        SetFormat(row.Cell(9),150);
+                    }
+                    else 
+                    {
+                        SetFormat(row.Cell(7), "");
+                        SetFormat(row.Cell(9), 0);
                     }
                     currentRow++;
                     start = start.AddDays(1);
