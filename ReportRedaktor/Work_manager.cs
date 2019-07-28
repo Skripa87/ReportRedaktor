@@ -263,6 +263,8 @@ namespace ReportRedaktor
                 var start = startPeriod;
                 var end = endPeriod.AddDays(1);
                 bool hollyday = false;
+                TimeSpan latenessSumm = TimeSpan.Zero, latenessEnterSumm = TimeSpan.Zero;
+                int fullcount = 0, fullcountEnter = 0;
                 while (start != end)
                 {
                     hollyday = (start.DayOfWeek == DayOfWeek.Sunday ||
@@ -300,42 +302,58 @@ namespace ReportRedaktor
                     {
                         SetFormat(row.Cell(6),"Не отметился");
                         SetFormat(row.Cell(8),100);
+                        fullcountEnter += 100;
                     }
                     else if (!string.IsNullOrEmpty(enter) && TimeSpan.Parse(enter) > persone.Startday && !hollyday)
                     {
-                        SetFormat(row.Cell(6), (TimeSpan.Parse(enter) - persone.Startday).ToString());
-                        if ((TimeSpan.Parse(enter) - persone.Startday).Minutes > 15)
+                        var latenessEnter = TimeSpan.Parse(enter) - persone.Startday;
+                        SetFormat(row.Cell(6),$"{(latenessEnter.Hours == 0 ? "" : latenessEnter.Hours + ":")}{(latenessEnter.Minutes.ToString().Length == 1 ? "0" + latenessEnter.Minutes : latenessEnter.Minutes.ToString())}:{(latenessEnter.Seconds.ToString().Length == 1 ? "0" + latenessEnter.Seconds : latenessEnter.Seconds.ToString())}");
+                        if (latenessEnter.Minutes > 15)
                         {
                             SetFormat(row.Cell(8), 100);
+                            fullcountEnter += 100;
                         }
-                        else
-                        {
-                            SetFormat(row.Cell(8), 0);
-                        }
+                        latenessEnterSumm += latenessEnter;
                     }
                     else
                     {
-                        SetFormat(row.Cell(6), "");
+                        SetFormat(row.Cell(6), "00:00");
                         SetFormat(row.Cell(8), 0);
                     }
                     if (!string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer) && !hollyday)
                     {
                         SetFormat(row.Cell(7), "Не отметился");
                         SetFormat(row.Cell(9), 150);
+                        fullcount += 150;
                     }
                     else if (!string.IsNullOrEmpty(outer) && TimeSpan.Parse(outer) < persone.Endday && !hollyday)
                     {
-                        SetFormat(row.Cell(7), (persone.Endday - TimeSpan.Parse(outer)).ToString());
+                        var lateness = persone.Endday - TimeSpan.Parse(outer);
+                        SetFormat(row.Cell(7), $"{(lateness.Hours == 0 ? "" : lateness.Hours + ":")}{(lateness.Minutes.ToString().Length == 1 ? "0" + lateness.Minutes : lateness.Minutes.ToString())}:{(lateness.Seconds.ToString().Length == 1 ? "0" + lateness.Seconds : lateness.Seconds.ToString())}");
                         SetFormat(row.Cell(9),150);
+                        fullcount += 150;
+                        latenessSumm += lateness;
                     }
                     else 
                     {
-                        SetFormat(row.Cell(7), "");
+                        SetFormat(row.Cell(7), "00:00");
                         SetFormat(row.Cell(9), 0);
                     }
                     currentRow++;
                     start = start.AddDays(1);
                 }
+                currentRow++;
+                var summaryRow = worksheet.Row(currentRow);
+                SetFormat(summaryRow.Cell(6),latenessEnterSumm);
+                SetFormat(summaryRow.Cell(7),latenessSumm);
+                SetFormat(summaryRow.Cell(8),fullcountEnter);
+                SetFormat(summaryRow.Cell(9),fullcount);
+                var summFullRange = worksheet.Range(currentRow + 1, 6, currentRow + 1, 7);
+                var fullRange = worksheet.Range(currentRow + 1, 8, currentRow + 1, 9);
+                summFullRange.Merge();
+                fullRange.Merge();
+                SetFormat(summFullRange,latenessSumm + latenessEnterSumm);
+                SetFormat(fullRange,fullcount + fullcountEnter);
                 worksheet.Columns().AdjustToContents();
                 worksheet.Rows().AdjustToContents();
             }
