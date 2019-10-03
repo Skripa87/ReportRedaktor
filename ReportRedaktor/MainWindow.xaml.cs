@@ -33,8 +33,9 @@ namespace ReportRedaktor
             if (string.IsNullOrEmpty(fileNameExcel))
                 return;
             var report_Manager = new Report_manager(fileNameExcel);
-            var start = DateTime.Parse("01.07.2019");
-            var end = DateTime.Parse("31.07.2019");
+            DateTime start = (DateTime)(calendarStart.SelectedDate ?? DateTime.MinValue);
+            DateTime end = (DateTime)(calendarEnd.SelectedDate ?? DateTime.MaxValue);
+            //var end = DateTime.Parse("31.08.2019");
             report_Manager.GetReport(start,end, progressBar);
         }
 

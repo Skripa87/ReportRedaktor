@@ -5,19 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ReportRedaktor"
         mc:Ignorable="d"
-        Title="Программулька" Height="113.137" Width="399.693">
+        Title="Программулька" Height="277.287" Width="399.693">
     <Grid Margin="0,0,2,2">
-        <Button Content="Выполнить" HorizontalAlignment="Left" Height="23" Margin="10,20,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="0.5,0.478" Click="Button_Click">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="98*"/>
+            <ColumnDefinition Width="97*"/>
+        </Grid.ColumnDefinitions>
+        <Button Content="Выполнить" HorizontalAlignment="Left" Height="23" Margin="10,183,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="0.5,0.478" Click="Button_Click">
             <Button.Effect>
                 <DropShadowEffect/>
             </Button.Effect>
         </Button>
-        <Button Content="Выбрать файл" HorizontalAlignment="Left" Margin="239,20,0,0" VerticalAlignment="Top" Width="134" Click="Button_Click_1" Height="23" RenderTransformOrigin="0.5,0.5" Cursor="Hand">
+        <Button Content="Выбрать файл" HorizontalAlignment="Left" Margin="50,185,0,0" VerticalAlignment="Top" Width="134" Click="Button_Click_1" Height="23" RenderTransformOrigin="0.5,0.5" Cursor="Hand" Grid.Column="1">
             <Button.Effect>
                 <DropShadowEffect/>
             </Button.Effect>
         </Button>
-        <ProgressBar Name="progressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="10" Margin="10,58,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787"/>
+        <ProgressBar Name="progressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="10" Margin="17,226,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787" Grid.ColumnSpan="2"/>
+        <Calendar Name="calendarStart" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+        <Calendar Name="calendarEnd"  Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
         <!--<TextBox Name="fileName" HorizontalAlignment="Left" Height="23" Margin="223,20,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="150"/>-->
 
     </Grid>

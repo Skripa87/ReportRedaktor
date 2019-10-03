@@ -61,7 +61,11 @@ namespace ReportRedaktor
                 var persone = new Persone(work_events.FirstOrDefault().UserName);
                 if (persone.Name
                     .ToLower()
-                    .Contains("егорова"))
+                    .Contains("егорова ю") || persone.Name
+                                                     .ToLower()
+                                                     .Contains("шангареева") || persone.Name
+                                                                                      .ToLower()
+                                                                                      .Contains("камалетдинов"))
                 {
                     persone.Startday = TimeSpan.Parse("08:00:00");
                     persone.Endday = TimeSpan.Parse("17:00:00");
@@ -272,6 +276,10 @@ namespace ReportRedaktor
                              ? true
                              : false;
                     var row = worksheet.Row(currentRow);
+                    if (hollyday)
+                    {
+                        row.Style.Fill.BackgroundColor = XLColor.LightPink;
+                    }
                     SetFormat(row.Cell(1), start.ToLongDateString());
                     SetFormat(row.Cell(2), persone.Name);
                     var bufer = persone.VisitList
