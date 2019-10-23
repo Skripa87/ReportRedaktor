@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ReportRedaktor.Properties
+namespace Reporter.Properties
 {
 
 

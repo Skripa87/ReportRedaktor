@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReportRedaktor
+namespace Reporter
 {
     public enum Direction { IN, OUT}
     public class Work_event

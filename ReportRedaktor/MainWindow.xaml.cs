@@ -14,25 +14,26 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using DocumentFormat.OpenXml.Office2013.Excel;
 
-namespace ReportRedaktor
+namespace Reporter
 {
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string fileNameExcel;
+        private string fileNameExcel;        
 
         public MainWindow()
         {
-            InitializeComponent();            
+            InitializeComponent();
+            checkBox.IsChecked = false;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(fileNameExcel))
                 return;
-            var report_Manager = new Report_manager(fileNameExcel);
+            var report_Manager = new ManagerReport(fileNameExcel,checkBox.IsChecked ?? false);
             DateTime start = (DateTime)(calendarStart.SelectedDate ?? DateTime.MinValue);
             DateTime end = (DateTime)(calendarEnd.SelectedDate ?? DateTime.MaxValue);
             //var end = DateTime.Parse("31.08.2019");
@@ -57,6 +58,6 @@ namespace ReportRedaktor
         private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
 
-        }
+        }        
     }
 }

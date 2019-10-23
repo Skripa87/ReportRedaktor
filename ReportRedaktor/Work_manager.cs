@@ -1,105 +1,110 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Security.Cryptography;
 using System.Windows.Controls;
 using OfficeOpenXml;
 using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Bibliography;
 
-namespace ReportRedaktor
+namespace Reporter
 {
-    public class Report_manager
+    public class ManagerReport
     {
-        public Report_manager(string fileName)
+        private static List<string> FiveClockWorkers { get; set; }
+        private static bool CheckWorkCount { get; set; }
+        public ManagerReport(string fileName, bool checkWorkCount)
         {
-            File_name = fileName;
+            FileName = fileName;
+            CheckWorkCount = checkWorkCount;
+            FiveClockWorkers = new List<string> { "камалетдинов а", "трофимов а", "галиуллин в","егорова ю","тазетдинов р", "тазетдинов а", "шангареева г" };
         }
 
-        private string File_name { get; set; }
+        private string FileName { get; set; }
 
         private List<Work_event> GetWork_Events()
         {
-            var work_events = new List<Work_event>();
-            string fileNameExcel = File_name;
+            var workEvents = new List<Work_event>();
+            string fileNameExcel = FileName;
             var failInfo = new FileInfo(fileNameExcel);
             using (var package = new ExcelPackage(failInfo))
             {
-                var ep_workbook = package.Workbook;
-                var workscheet = ep_workbook.Worksheets
+                var epWorkbook = package.Workbook;
+                var worksheet = epWorkbook.Worksheets
                                             .First();
-                var start = workscheet.Dimension.Start;
-                var end = workscheet.Dimension.End;
+                var end = worksheet.Dimension.End;
                 for (int row = 9; row < end.Row; row++)
                 {
-                    var workEvent = new Work_event(workscheet.GetValue(row, 1).ToString(),
-                                                   workscheet.GetValue(row, 2).ToString(),
-                                                   workscheet.GetValue(row, 3).ToString(),
-                                                   workscheet.GetValue(row, 4).ToString(),
-                                                   workscheet.GetValue(row, 5)?.ToString(),
+                    var workEvent = new Work_event(worksheet.GetValue(row, 1).ToString(),
+                                                   worksheet.GetValue(row, 2).ToString(),
+                                                   worksheet.GetValue(row, 3).ToString(),
+                                                   worksheet.GetValue(row, 4).ToString(),
+                                                   worksheet.GetValue(row, 5)?.ToString(),
                                                    "",
-                                                   workscheet.GetValue(row, 8)?.ToString() ?? "");
-                    work_events.Add(workEvent);
+                                                   worksheet.GetValue(row, 8)?.ToString() ?? "");
+                    workEvents.Add(workEvent);
                 }
             }
-            return work_events;
+            return workEvents.FindAll(f=>!string.IsNullOrEmpty(f.UserName));
         }
 
-        private List<Persone> GetPersones(ProgressBar progress)
+        private List<Persone> GetPersons(ProgressBar progress)
         {
-            var persones = new List<Persone>();
-            var work_events = GetWork_Events();
-            var count = work_events.Count;
-            while (work_events.Count > 0)
+            var persons = new List<Persone>();
+            //var workEventsBufferList = GetWork_Events();
+            //var indexFirstOrDefault = workEventsBufferList.IndexOf(workEventsBufferList.FirstOrDefault(w => !string.IsNullOrEmpty(w.UserName)));
+            var workEvents = GetWork_Events() ?? new List<Work_event>();//workEventsBufferList.GetRange(indexFirstOrDefault, workEventsBufferList.Count - indexFirstOrDefault);
+            var count = workEvents.Count;
+            while (workEvents.Count > 0)
             {
-                var currentvalueprogressbar = (count - work_events.Count) * 25 / count;
-                progress.Value = currentvalueprogressbar;
+                var progressbar = (count - workEvents.Count) * 25 / count;
+                progress.Value = progressbar;
                 progress.UpdateLayout();
-                var persone = new Persone(work_events.FirstOrDefault().UserName);
-                if (persone.Name
-                    .ToLower()
-                    .Contains("егорова ю") || persone.Name
-                                                     .ToLower()
-                                                     .Contains("шангареева") || persone.Name
-                                                                                      .ToLower()
-                                                                                      .Contains("камалетдинов"))
+                var person = new Persone(workEvents.FirstOrDefault()
+                                                  ?.UserName);
+                if (FiveClockWorkers.Contains(person.Name
+                                                     .ToLower()))
                 {
-                    persone.Startday = TimeSpan.Parse("08:00:00");
-                    persone.Endday = TimeSpan.Parse("17:00:00");
+                    person.Startday = TimeSpan.Parse("08:00:00");
+                    person.Endday = TimeSpan.Parse("17:00:00");
                 }
                 else
                 {
-                    persone.Startday = TimeSpan.Parse("09:00:00");
-                    persone.Endday = TimeSpan.Parse("18:00:00");
+                    person.Startday = TimeSpan.Parse("09:00:00");
+                    person.Endday = TimeSpan.Parse("18:00:00");
                 }
-                var personeEvents = work_events.FindAll(e => string.Equals(e.UserName, persone.Name));
-                work_events.RemoveAll(e => string.Equals(e.UserName, persone.Name));
-                while (personeEvents.Count > 0)
+                var personEvents = workEvents.FindAll(e => string.Equals(e.UserName, person.Name));
+                workEvents.RemoveAll(e => string.Equals(e.UserName, person.Name));
+                while (personEvents.Count > 0)
                 {
-                    var curent_date = personeEvents.FirstOrDefault().Date;
-                    var events = personeEvents.FindAll(p => DateTime.Equals(p.Date, curent_date));
-                    personeEvents.RemoveAll(p => DateTime.Equals(p.Date, curent_date));
+                    Work_event first = null;
+                    foreach (var @event in personEvents)
+                    {
+                        first = @event;
+                        break;
+                    }
+                    if (first == null) continue;
+                    var currentDate = first
+                        .Date;
+                    var events = personEvents.FindAll(p => DateTime.Equals(p.Date, currentDate));
+                    personEvents.RemoveAll(p => DateTime.Equals(p.Date, currentDate));
                     var enters = events.FindAll(e => e.Direction == Direction.IN);
                     var enter = enters.Count > 0
-                              ? enters.Min(e => e.Time)
-                              : TimeSpan.MinValue;
-                    var outers = events.FindAll(e => e.Direction == Direction.OUT);
-                    var outer = outers.Count == 0 ||
-                               (enters.Count > 0 &&
-                                enters.Any(e => e.Time > outers.Max(o => o.Time)))
-                              ? (enters.Max(e => e.Time) > persone.Endday)
-                                ? enters.Max(e => e.Time)
-                                : TimeSpan.MinValue
-                              : outers.Max(e => e.Time);
-                    var visit = new Visit(curent_date, enter, outer);
-                    persone.VisitList.Add(visit);
+                        ? enters.Min(e => e.Time)
+                        : TimeSpan.MinValue;
+                    var outliers = events.FindAll(e => e.Direction == Direction.OUT);
+                    var outer = outliers.Count == 0 ||
+                                (enters.Count > 0 &&
+                                 enters.Any(e => e.Time > outliers.Max(o => o.Time)))
+                        ? (enters.Max(e => e.Time) > person.Endday)
+                            ? enters.Max(e => e.Time)
+                            : TimeSpan.MinValue
+                        : outliers.Max(e => e.Time);
+                    var visit = new Visit(currentDate, enter, outer);
+                    person.VisitList.Add(visit);
                 }
-                persones.Add(persone);
+                persons.Add(person);
             }
-            return persones;
+            return persons;
         }
 
         private void SetFormat<T>(IXLRange range, T value)
@@ -148,13 +153,13 @@ namespace ReportRedaktor
 
         private XLWorkbook GetReportForPeriod(DateTime start, DateTime end, out List<Persone> persones, ProgressBar progress)
         {
-            persones = GetPersones(progress);
+            persones = GetPersons(progress);
             persones.RemoveAll(p => p.Name
                                         .ToLower()
                                         .Contains("гость") ||
                                     string.IsNullOrEmpty(p.Name));
             persones.Sort();
-            var newFileName = File_name.Substring(0, File_name.Length - 5) + "_new.xlsx";
+            var newFileName = FileName.Substring(0, FileName.Length - 5) + "_new.xlsx";
             XLWorkbook workbook = new XLWorkbook();
             var worksheet = workbook.AddWorksheet("Сводная_таблица");
             var range = worksheet.Range("A1:D1");
@@ -230,15 +235,16 @@ namespace ReportRedaktor
             return workbook;
         }
 
-        private void AddPersonalReports(XLWorkbook workbook, List<Persone> persones, DateTime startPeriod, DateTime endPeriod, ProgressBar progress)
+        private void AddPersonalReports(XLWorkbook workbook, List<Persone> persons, DateTime startPeriod, DateTime endPeriod, ProgressBar progress)
         {
             progress.Value = 75;
-            foreach (var persone in persones)
+            var countAllEvents = 0;
+            foreach (var person in persons)
             {
-                var worksheet = workbook.AddWorksheet(persone.Name.Substring(0, persone.Name
+                var worksheet = workbook.AddWorksheet(person.Name.Substring(0, person.Name
                                                                                       .Length >= 31
                                                                               ? 31
-                                                                              : persone.Name
+                                                                              : person.Name
                                                                                        .Length));
                 var range = worksheet.Range("A1:D1");
                 SetFormat(range, "Журнал событий входа-выхода");
@@ -263,40 +269,41 @@ namespace ReportRedaktor
                 SetFormat(worksheet.Cell("I6"), "Рано");
                 SetFormat(worksheet.Cell("C6"), "приход");
                 SetFormat(worksheet.Cell("D6"), "уход");
+                if (CheckWorkCount)
+                {
+                    SetFormat(worksheet.Range("K5:K6"), "Переработка");
+                }
                 var currentRow = 7;
                 var start = startPeriod;
                 var end = endPeriod.AddDays(1);
-                bool hollyday = false;
-                TimeSpan latenessSumm = TimeSpan.Zero, latenessEnterSumm = TimeSpan.Zero;
-                int fullcount = 0, fullcountEnter = 0;
+                TimeSpan latenessSum = TimeSpan.Zero, latenessEnterSum = TimeSpan.Zero, overWorkSum = TimeSpan.Zero;
+                int fullQuantityEnter = 0;
                 while (start != end)
                 {
-                    hollyday = (start.DayOfWeek == DayOfWeek.Sunday ||
-                                start.DayOfWeek == DayOfWeek.Saturday) 
-                             ? true
-                             : false;
+                    var holiday = (start.DayOfWeek == DayOfWeek.Sunday ||
+                                   start.DayOfWeek == DayOfWeek.Saturday);
                     var row = worksheet.Row(currentRow);
-                    if (hollyday)
+                    if (holiday)
                     {
                         row.Style.Fill.BackgroundColor = XLColor.LightPink;
                     }
                     SetFormat(row.Cell(1), start.ToLongDateString());
-                    SetFormat(row.Cell(2), persone.Name);
-                    var bufer = persone.VisitList
+                    SetFormat(row.Cell(2), person.Name);
+                    var buffer = person.VisitList
                                        .Find(v => DateTime.Equals(start, v.Date))
-                                      ?.Enter;
-                    var enter = bufer == null || bufer == TimeSpan.MinValue
+                                       ?.Enter;
+                    var enter = buffer == null || buffer == TimeSpan.MinValue
                               ? ""
-                              : bufer.ToString();
-                    bufer = persone.VisitList
+                              : buffer.ToString();
+                    buffer = person.VisitList
                                    .Find(v => DateTime.Equals(start, v.Date))
                                    ?.Outer;
-                    var outer = bufer == null || bufer == TimeSpan.MinValue
+                    var outer = buffer == null || buffer == TimeSpan.MinValue
                               ? ""
-                              : bufer.ToString();
+                              : buffer.ToString();
                     //***************************************************************************//
                     if (string.IsNullOrEmpty(enter) && 
-                        string.IsNullOrEmpty(outer) && !hollyday) 
+                        string.IsNullOrEmpty(outer) && !holiday) 
                     {
                         SetFormat(worksheet.Range(currentRow, 3, currentRow, 4), "Не зарегистрирован");
                     }
@@ -306,62 +313,72 @@ namespace ReportRedaktor
                         SetFormat(row.Cell(4), outer);
                     }
                     //*************************************************************************************//
-                    if (string.IsNullOrEmpty(enter) && !string.IsNullOrEmpty(outer) && !hollyday)
+                    if (string.IsNullOrEmpty(enter) && !string.IsNullOrEmpty(outer) && !holiday)
                     {
                         SetFormat(row.Cell(6),"Не отметился");
                         SetFormat(row.Cell(8),100);
-                        fullcountEnter += 100;
+                        fullQuantityEnter += 100;
                     }
-                    else if (!string.IsNullOrEmpty(enter) && TimeSpan.Parse(enter) > persone.Startday && !hollyday)
+                    else if (!string.IsNullOrEmpty(enter) && TimeSpan.Parse(enter) > person.Startday && !holiday)
                     {
-                        var latenessEnter = TimeSpan.Parse(enter) - persone.Startday;
-                        SetFormat(row.Cell(6),$"{(latenessEnter.Hours == 0 ? "" : latenessEnter.Hours + ":")}{(latenessEnter.Minutes.ToString().Length == 1 ? "0" + latenessEnter.Minutes : latenessEnter.Minutes.ToString())}:{(latenessEnter.Seconds.ToString().Length == 1 ? "0" + latenessEnter.Seconds : latenessEnter.Seconds.ToString())}");
+                        var latenessEnter = TimeSpan.Parse(enter) - person.Startday;
+                        SetFormat(row.Cell(6), $"{latenessEnter:hh}:{latenessEnter:mm}:{latenessEnter:ss}");
                         if (latenessEnter.Minutes > 15)
                         {
                             SetFormat(row.Cell(8), 100);
-                            fullcountEnter += 100;
+                            fullQuantityEnter += 100;
                         }
-                        latenessEnterSumm += latenessEnter;
+                        latenessEnterSum += latenessEnter;
                     }
                     else
                     {
                         SetFormat(row.Cell(6), "00:00");
                         SetFormat(row.Cell(8), 0);
                     }
-                    if (!string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer) && !hollyday)
+                    if (!string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer) && !holiday)
                     {
                         SetFormat(row.Cell(7), "Не отметился");
                         SetFormat(row.Cell(9), 150);
-                        fullcount += 150;
+                        countAllEvents += 150;
                     }
-                    else if (!string.IsNullOrEmpty(outer) && TimeSpan.Parse(outer) < persone.Endday && !hollyday)
+                    else if (!string.IsNullOrEmpty(outer) && TimeSpan.Parse(outer) < person.Endday && !holiday)
                     {
-                        var lateness = persone.Endday - TimeSpan.Parse(outer);
-                        SetFormat(row.Cell(7), $"{(lateness.Hours == 0 ? "" : lateness.Hours + ":")}{(lateness.Minutes.ToString().Length == 1 ? "0" + lateness.Minutes : lateness.Minutes.ToString())}:{(lateness.Seconds.ToString().Length == 1 ? "0" + lateness.Seconds : lateness.Seconds.ToString())}");
+                        var lateness = person.Endday - TimeSpan.Parse(outer);
+                        SetFormat(row.Cell(7), $"{lateness:hh}:{lateness:mm}:{lateness:ss}");
                         SetFormat(row.Cell(9),150);
-                        fullcount += 150;
-                        latenessSumm += lateness;
+                        countAllEvents += 150;
+                        latenessSum += lateness;
                     }
                     else 
                     {
                         SetFormat(row.Cell(7), "00:00");
                         SetFormat(row.Cell(9), 0);
                     }
+                    if (!string.IsNullOrEmpty(outer) && TimeSpan.Parse(outer) > person.Endday && CheckWorkCount)
+                    {
+                        var overWork = TimeSpan.Parse(outer) - person.Endday;
+                        SetFormat(row.Cell(11), $"{overWork:hh}:{overWork:mm}:{overWork:ss}");
+                        overWorkSum += overWork;
+                    }
                     currentRow++;
                     start = start.AddDays(1);
                 }
                 currentRow++;
                 var summaryRow = worksheet.Row(currentRow);
-                SetFormat(summaryRow.Cell(6),latenessEnterSumm);
-                SetFormat(summaryRow.Cell(7),latenessSumm);
-                SetFormat(summaryRow.Cell(8),fullcountEnter);
-                SetFormat(summaryRow.Cell(9),fullcount);
-                var summFullRange = worksheet.Range(currentRow + 1, 6, currentRow + 1, 7);
+                SetFormat(summaryRow.Cell(6),latenessEnterSum);
+                SetFormat(summaryRow.Cell(7),latenessSum);
+                SetFormat(summaryRow.Cell(8),fullQuantityEnter);
+                SetFormat(summaryRow.Cell(9),countAllEvents);
+                if (CheckWorkCount)
+                {
+                    SetFormat(summaryRow.Cell(11), overWorkSum);
+                }
+                var sumFullRange = worksheet.Range(currentRow + 1, 6, currentRow + 1, 7);
                 var fullRange = worksheet.Range(currentRow + 1, 8, currentRow + 1, 9);
-                summFullRange.Merge();
+                sumFullRange.Merge();
                 fullRange.Merge();
-                SetFormat(summFullRange,latenessSumm + latenessEnterSumm);
-                SetFormat(fullRange,fullcount + fullcountEnter);
+                SetFormat(sumFullRange,latenessSum + latenessEnterSum);
+                SetFormat(fullRange,countAllEvents + fullQuantityEnter);
                 worksheet.Columns().AdjustToContents();
                 worksheet.Rows().AdjustToContents();
             }
@@ -370,8 +387,8 @@ namespace ReportRedaktor
 
         public void GetReport(DateTime start, DateTime end, ProgressBar progressBar)
         {
-            var workBook = GetReportForPeriod(start, end, out var persones, progressBar);
-            AddPersonalReports(workBook, persones, start, end, progressBar);
+            var workBook = GetReportForPeriod(start, end, out var persons, progressBar);
+            AddPersonalReports(workBook, persons, start, end, progressBar);
             progressBar.Value = 100;
         }
     }

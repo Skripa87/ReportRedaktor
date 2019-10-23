@@ -1,11 +1,11 @@
-﻿<Window x:Class="ReportRedaktor.MainWindow"
+﻿<Window x:Class="Reporter.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ReportRedaktor"
+        xmlns:local="clr-namespace:Reporter"
         mc:Ignorable="d"
-        Title="Программулька" Height="277.287" Width="399.693">
+        Title="Программулька" Height="302.287" Width="398.693">
     <Grid Margin="0,0,2,2">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="98*"/>
@@ -21,9 +21,10 @@
                 <DropShadowEffect/>
             </Button.Effect>
         </Button>
-        <ProgressBar Name="progressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="10" Margin="17,226,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787" Grid.ColumnSpan="2"/>
+        <ProgressBar Name="progressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="12" Margin="16,247,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787" Grid.ColumnSpan="2"/>
         <Calendar Name="calendarStart" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
         <Calendar Name="calendarEnd"  Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+        <CheckBox Name="checkBox" Content="Учитывать переработки" HorizontalAlignment="Left" Margin="17,220,0,0" VerticalAlignment="Top" Height="16" Width="178" />
         <!--<TextBox Name="fileName" HorizontalAlignment="Left" Height="23" Margin="223,20,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="150"/>-->
 
     </Grid>
