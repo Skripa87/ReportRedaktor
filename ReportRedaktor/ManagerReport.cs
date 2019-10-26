@@ -360,7 +360,7 @@ namespace Reporter
                         SetFormat(row.Cell(7), "00:00");
                         SetFormat(row.Cell(9), 0);
                     }
-                    TimeSpan overWork = TimeSpan.Zero;
+                    TimeSpan overWork;
                     if (!string.IsNullOrEmpty(outer) && (outerTimeSpan > person.Endday
                                                          || outerTimeSpan < TimeSpan.Parse("05:00:00"))
                                                      && CheckWorkCount
@@ -410,7 +410,7 @@ namespace Reporter
             }
             catch (Exception ex)
             {
-                
+                // ignored
             }
         }
 
