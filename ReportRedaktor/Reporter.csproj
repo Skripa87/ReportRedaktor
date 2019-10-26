@@ -91,8 +91,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Visit.cs" />
-    <Compile Include="Work_event.cs" />
-    <Compile Include="Work_manager.cs" />
+    <Compile Include="WorkEvent.cs" />
+    <Compile Include="ManagerReport.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

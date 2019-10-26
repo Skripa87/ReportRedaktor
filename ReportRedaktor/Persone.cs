@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Reporter
 {
-    public class Persone:IComparable
+    public class Person:IComparable
     {
         public string Name { get; set; }
         public List<Visit> VisitList { get; set; }
         public TimeSpan Startday { get; set; }
         public TimeSpan Endday { get; set; }
-        public Persone(string name)
+        public Person(string name)
         {
             Name = name;
             VisitList = new List<Visit>();
@@ -20,7 +17,7 @@ namespace Reporter
 
         public int CompareTo(object obj)
         {
-            return string.Compare(Name, ((Persone)obj).Name);
+            return string.CompareOrdinal(Name, ((Person)obj).Name);
         }
     }
 }

@@ -1,43 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using DocumentFormat.OpenXml.Office2013.Excel;
 
 namespace Reporter
 {
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
-        private string fileNameExcel;        
+        private string _fileNameExcel;        
 
         public MainWindow()
         {
             InitializeComponent();
-            checkBox.IsChecked = false;
+            CheckBox.IsChecked = false;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(fileNameExcel))
+            if (string.IsNullOrEmpty(_fileNameExcel))
                 return;
-            var report_Manager = new ManagerReport(fileNameExcel,checkBox.IsChecked ?? false);
-            DateTime start = (DateTime)(calendarStart.SelectedDate ?? DateTime.MinValue);
-            DateTime end = (DateTime)(calendarEnd.SelectedDate ?? DateTime.MaxValue);
+            var reportManager = new ManagerReport(_fileNameExcel,CheckBox.IsChecked ?? false);
+            DateTime start = CalendarStart.SelectedDate ?? DateTime.MinValue;
+            DateTime end = CalendarEnd.SelectedDate ?? DateTime.MaxValue;
             //var end = DateTime.Parse("31.08.2019");
-            report_Manager.GetReport(start,end, progressBar);
+            reportManager.GetReport(start,end, ProgressBar);
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -51,7 +38,7 @@ namespace Reporter
 
             if (result == true)
             {
-                fileNameExcel = dlg.FileName;
+                _fileNameExcel = dlg.FileName;
             }
         }
 
