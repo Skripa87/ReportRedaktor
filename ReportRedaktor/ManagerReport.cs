@@ -82,15 +82,14 @@ namespace Reporter
                     }
                     if (first == null) continue;
                     var currentDate = first.Date;
-                    var eventsCurrentDateEnter = personEvents.FindAll(e =>e.Date>currentDate 
+                    var countEvents = personEvents.Count;
+                    var eventsCurrentDateEnter = personEvents.FindAll(e => DateTime.Equals(e.Date, currentDate)
                                                                        && e.Direction == Direction.In);
-                    if (eventsCurrentDateEnter.Count == 0)
-                    {
-
-                    }
+                    string description = "";
                     var eventsCurrentDateOut = personEvents.FindAll(e =>
-                                                   DateTime.Equals(e.Date, currentDate) 
+                                                   DateTime.Equals(e.Date, currentDate)
                                                                 && e.Direction == Direction.Out);
+                    if ()
                     //var visit = new Visit(currentDate, enter, outer);
                     person.VisitList.Add(new Visit(currentDate,));
                 }
@@ -289,9 +288,9 @@ namespace Reporter
 
                     }
 
-                    
-                    
-                            
+
+
+
                     //        SetFormat(row.Cell(1), start.ToLongDateString());
                     //        SetFormat(row.Cell(2), person.Name);
                     //        var enterTimeSpan = person.VisitList
@@ -383,44 +382,44 @@ namespace Reporter
                     //            overWorkSum += overWork;
                     //        }
                     //        currentRow++;
-                            start = start.AddDays(1);
-                        }
-                    //    currentRow++;
-                    //    var summaryRow = worksheet.Row(currentRow);
-                    //    SetFormat(summaryRow.Cell(6),latenessEnterSum);
-                    //    SetFormat(summaryRow.Cell(7),latenessSum);
-                    //    SetFormat(summaryRow.Cell(8),fullQuantityEnter);
-                    //    SetFormat(summaryRow.Cell(9),countAllEvents);
-                    //    if (CheckWorkCount)
-                    //    {
-                    //        SetFormat(summaryRow.Cell(11), overWorkSum);
-                    //    }
-                    //    var sumFullRange = worksheet.Range(currentRow + 1, 6, currentRow + 1, 7);
-                    //    var fullRange = worksheet.Range(currentRow + 1, 8, currentRow + 1, 9);
-                    //    sumFullRange.Merge();
-                    //    fullRange.Merge();
-                    //    SetFormat(sumFullRange,latenessSum + latenessEnterSum);
-                    //    SetFormat(fullRange,countAllEvents + fullQuantityEnter);
-                    //    worksheet.Columns().AdjustToContents();
-                    //    worksheet.Rows().AdjustToContents();
-                    //}
-
-                    //try
-                    //{
-                    //    workbook.Save();
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    // ignored
-                    //}
+                    start = start.AddDays(1);
                 }
-            }
+                //    currentRow++;
+                //    var summaryRow = worksheet.Row(currentRow);
+                //    SetFormat(summaryRow.Cell(6),latenessEnterSum);
+                //    SetFormat(summaryRow.Cell(7),latenessSum);
+                //    SetFormat(summaryRow.Cell(8),fullQuantityEnter);
+                //    SetFormat(summaryRow.Cell(9),countAllEvents);
+                //    if (CheckWorkCount)
+                //    {
+                //        SetFormat(summaryRow.Cell(11), overWorkSum);
+                //    }
+                //    var sumFullRange = worksheet.Range(currentRow + 1, 6, currentRow + 1, 7);
+                //    var fullRange = worksheet.Range(currentRow + 1, 8, currentRow + 1, 9);
+                //    sumFullRange.Merge();
+                //    fullRange.Merge();
+                //    SetFormat(sumFullRange,latenessSum + latenessEnterSum);
+                //    SetFormat(fullRange,countAllEvents + fullQuantityEnter);
+                //    worksheet.Columns().AdjustToContents();
+                //    worksheet.Rows().AdjustToContents();
+                //}
 
-            public void GetReport(DateTime start, DateTime end, ProgressBar progressBar)
-            {
-                var workBook = GetReportForPeriod(start, end, out var persons, progressBar);
-                AddPersonalReports(workBook, persons, start, end, progressBar);
-                progressBar.Value = 100;
+                //try
+                //{
+                //    workbook.Save();
+                //}
+                //catch (Exception ex)
+                //{
+                //    // ignored
+                //}
             }
         }
+
+        public void GetReport(DateTime start, DateTime end, ProgressBar progressBar)
+        {
+            var workBook = GetReportForPeriod(start, end, out var persons, progressBar);
+            AddPersonalReports(workBook, persons, start, end, progressBar);
+            progressBar.Value = 100;
+        }
     }
+}
