@@ -47,29 +47,16 @@ namespace Reporter
             return workEvents.FindAll(f => !string.IsNullOrEmpty(f.UserName));
         }
 
-        private List<Person> GetPersons(ProgressBar progress)
+        private List<Person> GetPersons()
         {
             var persons = new List<Person>();
             var workEvents = GetWorkEvents() ?? new List<WorkEvent>();
             var count = workEvents.Count;
             while (workEvents.Count > 0)
             {
-                var progressbar = (count - workEvents.Count) * 25 / count;
-                progress.Value = progressbar;
-                progress.UpdateLayout();
                 var person = new Person(workEvents.FirstOrDefault()
                                                   ?.UserName);
-                if (FiveClockWorkers.Any(f => person.Name
-                                                     .ToLower().Contains(f)))
-                {
-                    person.Startday = TimeSpan.Parse("08:00:00");
-                    person.Endday = TimeSpan.Parse("17:00:00");
-                }
-                else
-                {
-                    person.Startday = TimeSpan.Parse("09:00:00");
-                    person.Endday = TimeSpan.Parse("18:00:00");
-                }
+                person.SetWorkTime(FiveClockWorkers);
                 var personEvents = workEvents.FindAll(e => string.Equals(e.UserName, person.Name));
                 workEvents.RemoveAll(e => string.Equals(e.UserName, person.Name));
                 while (personEvents.Count > 0)
@@ -82,14 +69,28 @@ namespace Reporter
                     }
                     if (first == null) continue;
                     var currentDate = first.Date;
-                    var countEvents = personEvents.Count;
                     var eventsCurrentDateEnter = personEvents.FindAll(e => DateTime.Equals(e.Date, currentDate)
                                                                        && e.Direction == Direction.In);
-                    string description = "";
+                    var description = "";
                     var eventsCurrentDateOut = personEvents.FindAll(e =>
                                                    DateTime.Equals(e.Date, currentDate)
                                                                 && e.Direction == Direction.Out);
-                    if ()
+                    TimeSpan enter = TimeSpan.MinValue;
+                    if (eventsCurrentDateEnter.Count == 0)
+                    {
+                        description = eventsCurrentDateOut.Count == 0
+                            ? "Административный"
+                            : (eventsCurrentDateOut.Count == 1
+                                ? "Не отметился, не возможно определить время прихода"
+                                : $"Не отметился, предполагаемое время прихода {TimeSpan.FromMilliseconds(eventsCurrentDateOut.ElementAt(0).Time.TotalMilliseconds - (eventsCurrentDateOut.ElementAt(1).Time.TotalMilliseconds / 2))}"
+                            );
+                    }
+                    else
+                    {
+                        enter = eventsCurrentDateEnter.FirstOrDefault()
+                                                     ?.Time 
+                              ?? TimeSpan.MinValue;
+                    }
                     //var visit = new Visit(currentDate, enter, outer);
                     person.VisitList.Add(new Visit(currentDate,));
                 }
@@ -144,7 +145,7 @@ namespace Reporter
 
         private XLWorkbook GetReportForPeriod(DateTime start, DateTime end, out List<Person> persones, ProgressBar progress)
         {
-            persones = GetPersons(progress);
+            persones = GetPersons();
             persones.RemoveAll(p => p.Name
                                         .ToLower()
                                         .Contains("гость") ||
