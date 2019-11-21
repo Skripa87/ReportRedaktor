@@ -73,17 +73,19 @@ namespace Reporter
                                                                        && e.Direction == Direction.In);
                     var description = "";
                     var eventsCurrentDateOut = personEvents.FindAll(e =>
-                                                   DateTime.Equals(e.Date, currentDate)
-                                                                && e.Direction == Direction.Out);
-                    TimeSpan enter = TimeSpan.MinValue;
+                                                   (DateTime.Equals(e.Date, currentDate) || 
+                                                   (DateTime.Equals(e.Date,currentDate.AddDays(1))
+                                                    &&(e.Time > TimeSpan.Zero && e.Time < person.Startday)))
+                                                    && e.Direction == Direction.Out);
+                    var enter = TimeSpan.MinValue;
                     if (eventsCurrentDateEnter.Count == 0)
                     {
                         description = eventsCurrentDateOut.Count == 0
-                            ? "Административный"
-                            : (eventsCurrentDateOut.Count == 1
-                                ? "Не отметился, не возможно определить время прихода"
-                                : $"Не отметился, предполагаемое время прихода {TimeSpan.FromMilliseconds(eventsCurrentDateOut.ElementAt(0).Time.TotalMilliseconds - (eventsCurrentDateOut.ElementAt(1).Time.TotalMilliseconds / 2))}"
-                            );
+                                    ? "Административный"
+                                    : (eventsCurrentDateOut.Count == 1
+                                        ? "Не отметился, не возможно определить время прихода"
+                                        : $"Не отметился, предполагаемое время прихода {TimeSpan.FromMilliseconds(eventsCurrentDateOut.ElementAt(0).Time.TotalMilliseconds - (eventsCurrentDateOut.ElementAt(1).Time.TotalMilliseconds / 2))}"
+                                    );
                     }
                     else
                     {
@@ -91,8 +93,28 @@ namespace Reporter
                                                      ?.Time 
                               ?? TimeSpan.MinValue;
                     }
-                    //var visit = new Visit(currentDate, enter, outer);
-                    person.VisitList.Add(new Visit(currentDate,));
+                    var outer = TimeSpan.MinValue;
+                    if (eventsCurrentDateOut.Count == 0)
+                    {
+                        description = eventsCurrentDateEnter.Count == 0
+                                    ? "Административный"
+                                    : (eventsCurrentDateEnter.Count == 1
+                                        ? "Не отметился, не возможно определить время ухода"
+                                        : $"Не отметился, последний зарегестрированный вход {eventsCurrentDateEnter.Last().Time}");
+                    }
+                    else
+                    {
+                        var index = personEvents.IndexOf(eventsCurrentDateOut.Last());
+                        outer = personEvents.ElementAt(index+1)
+                                            .Direction == Direction.In
+                              ? eventsCurrentDateOut.Last()
+                                                    .Time
+                              : personEvents.FindAll(p=>DateTime.Equals(p.Date,currentDate)||
+                                                        DateTime.Equals(p.Date,currentDate.AddDays(1)) && 
+                                                        () && p.Direction == Direction.Out)
+                    }
+                    person.VisitList
+                          .Add(new Visit(currentDate,enter,outer,description));
                 }
                 persons.Add(person);
             }
