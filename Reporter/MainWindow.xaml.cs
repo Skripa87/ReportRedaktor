@@ -8,7 +8,7 @@ namespace Reporter
     /// </summary>
     public partial class MainWindow
     {
-        private string _fileNameExcel;        
+        private string _fileNameExcel;
 
         public MainWindow()
         {
@@ -20,11 +20,11 @@ namespace Reporter
         {
             if (string.IsNullOrEmpty(_fileNameExcel))
                 return;
-            var reportManager = new ManagerReport(_fileNameExcel,CheckBox.IsChecked ?? false);
+            var reportManager = new ManagerReport(_fileNameExcel, CheckBox.IsChecked ?? false);
             DateTime start = CalendarStart.SelectedDate ?? DateTime.MinValue;
             DateTime end = CalendarEnd.SelectedDate ?? DateTime.MaxValue;
             //var end = DateTime.Parse("31.08.2019");
-            reportManager.GetReport(start,end, ProgressBar);
+            reportManager.GetReport(start, end, ProgressBar);
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -45,6 +45,11 @@ namespace Reporter
         private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
 
-        }        
+        }
+
+        private void CheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            this.CheckBox.IsChecked = this.CheckBox.IsChecked;
+        }
     }
 }
