@@ -73,9 +73,9 @@ namespace Reporter
                                                                        && e.Direction == Direction.In);
                     var description = "";
                     var eventsCurrentDateOut = personEvents.FindAll(e =>
-                                                   (DateTime.Equals(e.Date, currentDate) || 
-                                                   (DateTime.Equals(e.Date,currentDate.AddDays(1))
-                                                    &&(e.Time > TimeSpan.Zero && e.Time < person.Startday)))
+                                                   (DateTime.Equals(e.Date, currentDate) ||
+                                                   (DateTime.Equals(e.Date, currentDate.AddDays(1))
+                                                    && (e.Time > TimeSpan.Zero && e.Time < person.Startday)))
                                                     && e.Direction == Direction.Out);
                     var enter = TimeSpan.MinValue;
                     if (eventsCurrentDateEnter.Count == 0)
@@ -90,7 +90,7 @@ namespace Reporter
                     else
                     {
                         enter = eventsCurrentDateEnter.FirstOrDefault()
-                                                     ?.Time 
+                                                     ?.Time
                               ?? TimeSpan.MinValue;
                     }
                     var outer = TimeSpan.MinValue;
@@ -105,16 +105,26 @@ namespace Reporter
                     else
                     {
                         var index = personEvents.IndexOf(eventsCurrentDateOut.Last());
-                        outer = personEvents.ElementAt(index+1)
-                                            .Direction == Direction.In
-                              ? eventsCurrentDateOut.Last()
-                                                    .Time
-                              : personEvents.FindAll(p=>DateTime.Equals(p.Date,currentDate)||
-                                                        DateTime.Equals(p.Date,currentDate.AddDays(1)) && 
-                                                        () && p.Direction == Direction.Out)
+                        if (index == personEvents.Count)
+                        {
+                            outer = eventsCurrentDateOut.Last()
+                                                        .Time;
+                        }
+                        else
+                        {
+                            outer = personEvents.ElementAt(index + 1)
+                                                .Direction == Direction.In
+                                ? eventsCurrentDateOut.Last()
+                                                      .Time
+                                : personEvents.FindAll(p => DateTime.Equals(p.Date, currentDate) ||
+                                                            (DateTime.Equals(p.Date, currentDate.AddDays(1)) &&
+                                                             (p.Time < person.Startday)) &&
+                                                            p.Direction == Direction.Out).Last()?.Time ?? TimeSpan.Zero;
+                        }
                     }
                     person.VisitList
-                          .Add(new Visit(currentDate,enter,outer,description));
+                          .Add(new Visit(currentDate, enter, outer, description));
+                    currentDate = currentDate.AddDays(1);
                 }
                 persons.Add(person);
             }
