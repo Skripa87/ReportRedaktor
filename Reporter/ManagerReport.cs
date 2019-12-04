@@ -105,7 +105,7 @@ namespace Reporter
                     else
                     {
                         var index = personEvents.IndexOf(eventsCurrentDateOut.Last());
-                        if (index == personEvents.Count)
+                        if (index == personEvents.Count - 1)
                         {
                             outer = eventsCurrentDateOut.Last()
                                                         .Time;
@@ -124,7 +124,7 @@ namespace Reporter
                     }
                     person.VisitList
                           .Add(new Visit(currentDate, enter, outer, description));
-                    currentDate = currentDate.AddDays(1);
+                    personEvents.RemoveAll(p => DateTime.Equals(p.Date, currentDate));
                 }
                 persons.Add(person);
             }
@@ -294,6 +294,8 @@ namespace Reporter
         private void AddPersonalReports(XLWorkbook workbook, List<Person> persons, DateTime startPeriod,
             DateTime endPeriod, ProgressBar progress)
         {
+            var fifteenMinutes = TimeSpan.Parse("00:15:00");
+            var hour = TimeSpan.Parse("01:00:00");
             progress.Value = 75;
             foreach (var person in persons)
             {
@@ -303,148 +305,201 @@ namespace Reporter
                                                                                              : person.Name
                                                                                                      .Length));
                 var countAllEvents = 0;
-                CreateHeaderWorkSheet(worksheet, startPeriod);
+                worksheet = CreateHeaderWorkSheet(worksheet, startPeriod);
                 var currentRow = 7;
                 var start = startPeriod;
                 var end = endPeriod.AddDays(1);
-                TimeSpan latenessSum = TimeSpan.Zero, latenessEnterSum = TimeSpan.Zero, overWorkSum = TimeSpan.Zero;
+                var payForLateness = 0;
+                var payForEarly = 0;
+                TimeSpan latenessSum = TimeSpan.Zero, latenessEnterSum = TimeSpan.Zero, overWorkSum = TimeSpan.Zero, lateness = TimeSpan.Zero, earlyOut = TimeSpan.Zero, overWork = TimeSpan.Zero;
                 int fullQuantityEnter = 0;
+                var holiday = false;
                 while (start != end)
                 {
                     var row = worksheet.Row(currentRow);
                     if (start.DayOfWeek == DayOfWeek.Sunday || start.DayOfWeek == DayOfWeek.Saturday)
                     {
-                        row.Style.Fill.BackgroundColor = XLColor.LightPink;
-
-
-
-
+                        row.Style
+                           .Fill
+                           .BackgroundColor = XLColor.LightPink;
+                        holiday = true;
                     }
+                    else
+                    {
+                        holiday = false;
+                    }
+                    SetFormat(row.Cell(1), start.ToLongDateString());
+                    SetFormat(row.Cell(2), person.Name);
+                    var enter = person.VisitList
+                                      .Find(v => DateTime.Equals(start, v.Date))
+                                      ?.Enter ?? TimeSpan.MinValue;
+                    var outer = person.VisitList
+                                      .Find(v => DateTime.Equals(start, v.Date))
+                                      ?.Outer ?? TimeSpan.MinValue;
+                    var description = person.VisitList
+                                            .Find(v => DateTime.Equals(start, v.Date))
+                                            ?.Description;
+                    //***************************************************************************//
+                    if (TimeSpan.Equals(enter, TimeSpan.MinValue) && TimeSpan.Equals(outer, TimeSpan.MinValue))
+                    {
+                        if (!holiday)
+                        {
+                            SetFormat(worksheet.Range(currentRow, 3, currentRow, 4), "Не зарегистрирован");
+                        }
+                    }
+                    else if (!TimeSpan.Equals(enter, TimeSpan.MinValue) && TimeSpan.Equals(outer, TimeSpan.MinValue))
+                    {
+                        SetFormat(row.Cell(3), $"{enter:hh}:{enter:mm}:{enter:ss}");
+                        SetFormat(row.Cell(4), "");
+                        SetFormat(row.Cell(5), description ?? "");
+                        SetFormat(row.Cell(7), "Не отметился");
+                        if (!holiday)
+                        {
+                            SetFormat(row.Cell(9), "150");
+                            payForEarly += 150;
+                            if (enter > person.Startday
+                                    .Add(fifteenMinutes))
+                            {
+                                lateness = enter - person.Startday;
+                                SetFormat(row.Cell(6), $"{lateness:hh}:{lateness:mm}:{lateness:ss}");
+                                payForLateness += 100;
+                                if (enter < person.Startday.Add(hour))
+                                {
+                                    SetFormat(row.Cell(8), "100");
+                                }
+                                else
+                                {
+                                    SetFormat(row.Cell(8), "?");
+                                    row.Cell(8).Style.Fill.BackgroundColor = XLColor.Red;
+                                }
+                            }
+                            else
+                            {
+                                SetFormat(row.Cell(6), "00:00");
+                                SetFormat(row.Cell(8), "0");
+                            }
+                        }
+                        else
+                        {
+                            SetFormat(row.Cell(9), "0");
+                            SetFormat(row.Cell(6), "00:00");
+                            SetFormat(row.Cell(8), "0");
+                        }
+                    }
+                    else if(TimeSpan.Equals(enter, TimeSpan.MinValue) && !TimeSpan.Equals(outer, TimeSpan.MinValue))
+                    {
+                        SetFormat(row.Cell(3), "");
+                        SetFormat(row.Cell(4), $"{outer:hh}:{outer:mm}:{outer:ss}");
+                        SetFormat(row.Cell(5), description ?? "");
+                        SetFormat(row.Cell(6), "Не отметился");
+                        if (outer > person.Endday.Add(hour) && CheckWorkCount)
+                        {
+                            if (outer < person.Startday)
+                            {
+                                overWork = TimeSpan.FromDays(1)
+                                    .Subtract(person.Endday
+                                        .Add(hour))
+                                    .Add(outer)
+                                    .Subtract(hour)
+                                    .Subtract(fifteenMinutes);
+                                overWork = TimeSpan.FromMinutes(overWork.Minutes - (overWork.Minutes % 30));
+                            }
+                            else
+                            {
+                                overWork = outer - person.Endday.Add(hour).Add(fifteenMinutes);
+                                overWork = TimeSpan.FromMinutes(overWork.Minutes - (overWork.Minutes % 30));
+                            }
+                            SetFormat(row.Cell(11), $"{overWork:hh}:{overWork:mm}:{overWork:ss}");
+                            overWorkSum += overWork;
+                        }
+                        else if (!holiday)
+                        {
+                            SetFormat(row.Cell(8), "100");
+                            payForLateness += 100;
+                            if (outer < person.Endday && outer > person.Startday)
+                            {
+                                earlyOut = person.Endday - -outer;
+                                SetFormat(row.Cell(7), $"{earlyOut:hh}:{earlyOut:mm}:{earlyOut:ss}");
+                                payForEarly += 100;
+                                if (outer > person.Endday.Subtract(hour))
+                                {
+                                    SetFormat(row.Cell(9), "100");
+                                }
+                                else
+                                {
+                                    SetFormat(row.Cell(9), "?");
+                                    row.Cell(9).Style.Fill.BackgroundColor = XLColor.Red;
+                                }
+                            }
+                            else
+                            {
+                                SetFormat(row.Cell(7), "00:00");
+                                SetFormat(row.Cell(9), "0");
+                            }
+                        }
+                        else
+                        {
+                            SetFormat(row.Cell(8), "0");
+                            SetFormat(row.Cell(7), "00:00");
+                            SetFormat(row.Cell(9), "0");
+                        }
+                    }else if (!TimeSpan.Equals(enter, TimeSpan.MinValue) && !TimeSpan.Equals(outer, TimeSpan.MinValue))
+                    {
+                        SetFormat(row.Cell(3), $"{enter:hh}:{enter:mm}:{enter:ss}");
+                        SetFormat(row.Cell(4), $"{outer:hh}:{outer:mm}:{outer:ss}");
+                        SetFormat(row.Cell(5), description ?? "");
+                        if (holiday)
+                        {
+                            if (outer < enter)
+                            {
+                                overWork = TimeSpan.FromDays(1).Subtract(person.Endday.Add(hour)).Add(outer);
+                            }
+                        }
+                        else 
+                        {
+                            if (enter > person.Startday
+                                              .Add(fifteenMinutes))
+                            {
+                                lateness = enter - person.Startday
+                                                         .Add(fifteenMinutes);
+                                latenessEnterSum += lateness;
+                                SetFormat(row.Cell(6), lateness);
+                                if (lateness > hour)
+                                {
+                                    SetFormat(row.Cell(8), "?");
+                                    row.Cell(8)
+                                       .Style
+                                       .Fill
+                                       .BackgroundColor = XLColor.Red;
+                                }
+                                else
+                                {
+                                    SetFormat(row.Cell(8),"100");
+                                    payForLateness += 100;
+                                }
+                            }
 
-
-
-
-                    //        SetFormat(row.Cell(1), start.ToLongDateString());
-                    //        SetFormat(row.Cell(2), person.Name);
-                    //        var enterTimeSpan = person.VisitList
-                    //                           .Find(v => DateTime.Equals(start, v.Date))
-                    //                           ?.Enter ?? TimeSpan.Zero;
-                    //        var enter = enterTimeSpan == TimeSpan.Zero
-                    //                  ? ""
-                    //                  : enterTimeSpan.ToString();
-                    //        var outerTimeSpan = person.VisitList
-                    //                       .Find(v => DateTime.Equals(start, v.Date))
-                    //                       ?.Outer ?? TimeSpan.Zero;
-                    //        var outer = outerTimeSpan == TimeSpan.Zero
-                    //                  ? ""
-                    //                  : outerTimeSpan.ToString();
-                    //        //***************************************************************************//
-                    //        if (string.IsNullOrEmpty(enter) && 
-                    //            string.IsNullOrEmpty(outer) && !holiday) 
-                    //        {
-                    //            SetFormat(worksheet.Range(currentRow, 3, currentRow, 4), "Не зарегистрирован");
-                    //        }
-                    //        else
-                    //        {
-                    //            SetFormat(row.Cell(3), enter);
-                    //            SetFormat(row.Cell(4), outer);
-                    //        }
-                    //        //*************************************************************************************//
-                    //        if (string.IsNullOrEmpty(enter) && !string.IsNullOrEmpty(outer) && !holiday)
-                    //        {
-                    //            SetFormat(row.Cell(6),"Не отметился");
-                    //            SetFormat(row.Cell(8),100);
-                    //            fullQuantityEnter += 100;
-                    //        }
-                    //        else if (!string.IsNullOrEmpty(enter) && enterTimeSpan > person.Startday && !holiday)
-                    //        {
-                    //            var latenessEnter =  enterTimeSpan - person.Startday;
-                    //            SetFormat(row.Cell(6), $"{latenessEnter:hh}:{latenessEnter:mm}:{latenessEnter:ss}");
-                    //            if (latenessEnter.Minutes > 15)
-                    //            {
-                    //                SetFormat(row.Cell(8), 100);
-                    //                fullQuantityEnter += 100;
-                    //            }
-                    //            latenessEnterSum += latenessEnter;
-                    //        }
-                    //        else
-                    //        {
-                    //            SetFormat(row.Cell(6), "00:00");
-                    //            SetFormat(row.Cell(8), 0);
-                    //        }
-                    //        if (!string.IsNullOrEmpty(enter) && string.IsNullOrEmpty(outer) && !holiday)
-                    //        {
-                    //            SetFormat(row.Cell(7), "Не отметился");
-                    //            SetFormat(row.Cell(9), 150);
-                    //            countAllEvents += 150;
-                    //        }
-                    //        else if (!string.IsNullOrEmpty(outer) && (outerTimeSpan < person.Endday 
-                    //                                              && outerTimeSpan > TimeSpan.Parse("05:00:00")) 
-                    //                                              && !holiday)
-                    //        {
-                    //            var lateness = person.Endday - outerTimeSpan;
-                    //            SetFormat(row.Cell(7), $"{lateness:hh}:{lateness:mm}:{lateness:ss}");
-                    //            SetFormat(row.Cell(9),150);
-                    //            countAllEvents += 150;
-                    //            latenessSum += lateness;
-                    //        }
-                    //        else 
-                    //        {
-                    //            SetFormat(row.Cell(7), "00:00");
-                    //            SetFormat(row.Cell(9), 0);
-                    //        }
-                    //        TimeSpan overWork;
-                    //        if (!string.IsNullOrEmpty(outer) && (outerTimeSpan > person.Endday
-                    //                                             || outerTimeSpan < TimeSpan.Parse("05:00:00"))
-                    //                                         && CheckWorkCount
-                    //                                         && !holiday)
-                    //        {
-                    //            overWork = outerTimeSpan < TimeSpan.Parse("05:00:00") && outerTimeSpan != TimeSpan.Zero
-                    //                     ? TimeSpan.Parse("06:00:00") + outerTimeSpan
-                    //                     : outerTimeSpan - person.Endday;
-                    //            SetFormat(row.Cell(11), $"{overWork:hh}:{overWork:mm}:{overWork:ss}");
-                    //            overWorkSum += overWork;
-                    //        }
-                    //        else if(holiday && CheckWorkCount && !string.IsNullOrEmpty(outer))
-                    //        {
-                    //            overWork = outerTimeSpan < TimeSpan.Parse("05:00:00")
-                    //                     ? TimeSpan.Parse("23:00:00") - enterTimeSpan + outerTimeSpan +
-                    //                       TimeSpan.Parse("01:00:00")
-                    //                     : outerTimeSpan - enterTimeSpan;
-                    //            SetFormat(row.Cell(11), $"{overWork:hh}:{overWork:mm}:{overWork:ss}");
-                    //            overWorkSum += overWork;
-                    //        }
-                    //        currentRow++;
+                            if (outer < person.Endday && outer > person.Startday)
+                            {
+                                earlyOut = person.Endday - outer;
+                                if (earlyOut > hour)
+                                {
+                                    SetFormat(row.Cell(9), "?");
+                                    row.Cell(9)
+                                        .Style
+                                        .Fill
+                                        .BackgroundColor = XLColor.Red;
+                                }
+                                else
+                                {
+                                    SetFormat(row.Cell(9),150);
+                                    payForEarly += 150;
+                                }
+                            }
+                        }
+                    }
                     start = start.AddDays(1);
                 }
-                //    currentRow++;
-                //    var summaryRow = worksheet.Row(currentRow);
-                //    SetFormat(summaryRow.Cell(6),latenessEnterSum);
-                //    SetFormat(summaryRow.Cell(7),latenessSum);
-                //    SetFormat(summaryRow.Cell(8),fullQuantityEnter);
-                //    SetFormat(summaryRow.Cell(9),countAllEvents);
-                //    if (CheckWorkCount)
-                //    {
-                //        SetFormat(summaryRow.Cell(11), overWorkSum);
-                //    }
-                //    var sumFullRange = worksheet.Range(currentRow + 1, 6, currentRow + 1, 7);
-                //    var fullRange = worksheet.Range(currentRow + 1, 8, currentRow + 1, 9);
-                //    sumFullRange.Merge();
-                //    fullRange.Merge();
-                //    SetFormat(sumFullRange,latenessSum + latenessEnterSum);
-                //    SetFormat(fullRange,countAllEvents + fullQuantityEnter);
-                //    worksheet.Columns().AdjustToContents();
-                //    worksheet.Rows().AdjustToContents();
-                //}
-
-                //try
-                //{
-                //    workbook.Save();
-                //}
-                //catch (Exception ex)
-                //{
-                //    // ignored
-                //}
             }
         }
 
