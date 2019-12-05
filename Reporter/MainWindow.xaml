@@ -4,27 +4,30 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Программулька" Height="302.287" Width="398.693">
+        Title="Программулька" Height="368.526" Width="398.693">
     <Grid Margin="0,0,2,2">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="98*"/>
             <ColumnDefinition Width="97*"/>
         </Grid.ColumnDefinitions>
-        <Button Content="Выполнить" HorizontalAlignment="Left" Height="23" Margin="10,183,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="0.5,0.478" Click="Button_Click">
+        <Button Content="Выполнить" HorizontalAlignment="Left" Height="23" Margin="21,234,0,0" VerticalAlignment="Top" Width="150" RenderTransformOrigin="0.5,0.478" Click="Button_Click">
             <Button.Effect>
                 <DropShadowEffect/>
             </Button.Effect>
         </Button>
-        <Button Content="Выбрать файл" HorizontalAlignment="Left" Margin="50,185,0,0" VerticalAlignment="Top" Width="134" Click="Button_Click_1" Height="23" RenderTransformOrigin="0.5,0.5" Cursor="Hand" Grid.Column="1">
+        <Button Content="Выбрать файл" HorizontalAlignment="Left" Margin="50,234,0,0" VerticalAlignment="Top" Width="134" Click="Button_Click_1" Height="23" RenderTransformOrigin="0.5,0.5" Cursor="Hand" Grid.Column="1">
             <Button.Effect>
                 <DropShadowEffect/>
             </Button.Effect>
         </Button>
-        <ProgressBar Name="ProgressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="12" Margin="16,247,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787" Grid.ColumnSpan="2"
+        <ProgressBar Name="ProgressBar"  Minimum="0" Maximum="100" Value="0.1" HorizontalAlignment="Left" Height="12" Margin="21,314,0,0" VerticalAlignment="Top" Width="363" ValueChanged="ProgressBar_ValueChanged" BorderBrush="#FFAC8787" Grid.ColumnSpan="2"
                      Grid.Column="0" />
-        <Calendar Grid.Column="0" Name="CalendarStart" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <Calendar Name="CalendarEnd"  Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <CheckBox Grid.Column="0" Name="CheckBox" Content="Учитывать переработки" HorizontalAlignment="Left" Margin="17,220,0,0" VerticalAlignment="Top" Height="16" Width="178" IsChecked="False" Checked="CheckBox_OnChecked"/>
+        <Calendar Grid.Column="0" Name="CalendarStart" HorizontalAlignment="Left" Margin="10,51,0,0" VerticalAlignment="Top"/>
+        <Calendar Name="CalendarEnd"  Grid.Column="1" HorizontalAlignment="Left" Margin="10,51,0,0" VerticalAlignment="Top"/>
+        <CheckBox Grid.Column="0" Name="CheckBox" Content="Учитывать переработки" HorizontalAlignment="Left" Margin="22,294,0,0" VerticalAlignment="Top" Height="16" Width="178" IsChecked="False" Checked="CheckBox_OnChecked" Grid.ColumnSpan="2"/>
+        <TextBox Name="Holidays" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="369" Grid.ColumnSpan="2" TextChanged="Holidays_TextChanged"/>
+        <CheckBox Content="Считать Рабочий состав" Name="CheckBoxForCountWorker" Grid.Column="1" HorizontalAlignment="Left" Margin="19,294,0,0" VerticalAlignment="Top" Width="165" IsChecked="False" Checked="CheckBox_Checked"/>
+        <Label Name="SelectedFile" Content="" Grid.Column="1" HorizontalAlignment="Left" Margin="50,262,0,0" VerticalAlignment="Top" Width="134" Height="27"/>
         <!--<TextBox Name="fileName" HorizontalAlignment="Left" Height="23" Margin="223,20,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="150"/>-->
 
     </Grid>
