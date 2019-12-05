@@ -26,13 +26,13 @@ namespace Reporter
             if (fiveClockEndDayWorkers.Any(f => Name.ToLower()
                                                     .Contains(f)))
             {
-                Startday = TimeSpan.Parse("08:00:00");
-                Endday = TimeSpan.Parse("17:00:00");
+                Startday = new TimeSpan(8, 0, 0);
+                Endday = new TimeSpan(17, 0, 0);
             }
             else
             {
-                Startday = TimeSpan.Parse("09:00:00");
-                Endday = TimeSpan.Parse("18:00:00");
+                Startday = new TimeSpan(9, 0, 0);
+                Endday = new TimeSpan(18, 0, 0);
             }
         }
     }
