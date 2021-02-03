@@ -21,18 +21,18 @@ namespace Reporter
             return string.CompareOrdinal(Name, ((Person)obj).Name);
         }
 
-        public void SetWorkTime(List<string> fiveClockEndDayWorkers)
+        public void SetWorkTime(List<string> whoStartNine)
         {
-            if (fiveClockEndDayWorkers.Any(f => Name.ToLower()
-                                                    .Contains(f)))
-            {
-                Startday = new TimeSpan(8, 0, 0);
-                Endday = new TimeSpan(17, 0, 0);
-            }
-            else
+            if (whoStartNine.Any(f => Name.ToLower()
+                                          .Contains(f)))
             {
                 Startday = new TimeSpan(9, 0, 0);
                 Endday = new TimeSpan(18, 0, 0);
+            }
+            else
+            {
+                Startday = new TimeSpan(8, 0, 0);
+                Endday = new TimeSpan(17, 0, 0);
             }
         }
     }

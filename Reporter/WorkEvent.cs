@@ -3,7 +3,7 @@
 namespace Reporter
 {
     public enum Direction { In, Out}
-    public class WorkEvent
+    public class WorkEvent:IComparable<WorkEvent>
     {
         public DateTime Date { get; set; }
         public TimeSpan Time { get; set; }
@@ -30,6 +30,13 @@ namespace Reporter
                    ? 0
                    : -1;
             UserName = userName;
+        }        
+
+        public int CompareTo(WorkEvent other)
+        {
+            return other.Time < Time
+                   ? 1
+                   : (other.Time > Time ? -1 : 0);
         }
     }
 }

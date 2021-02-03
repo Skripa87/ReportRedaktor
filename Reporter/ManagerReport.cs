@@ -10,7 +10,7 @@ namespace Reporter
 {
     public class ManagerReport
     {
-        private static List<string> FiveClockWorkers { get; set; }
+        private static List<string> WhoStartOnNineOClock { get; set; }
         private static bool CheckWorkCount { get; set; }
 
         private static bool CountWorker { get; set; }
@@ -22,7 +22,7 @@ namespace Reporter
             FileName = fileName;
             CheckWorkCount = checkWorkCount;
             CountWorker = countWorker;
-            FiveClockWorkers = new List<string> { "камалетдинов а", "трофимов а", "галиуллин в", "егорова ю", "тазетдинов р", "тазетдинов а", "шангареева г" };
+            WhoStartOnNineOClock = new List<string> { };
             FifteenMinuts = new TimeSpan(0,0,15,0);
             Hour = new TimeSpan(0,1,0,0);
             Day = new TimeSpan(1,0,0,0);
@@ -64,9 +64,9 @@ namespace Reporter
             {
                 var person = new Person(workEvents.FirstOrDefault()
                                                   ?.UserName);
-                person.SetWorkTime(FiveClockWorkers);
-                var personEvents = workEvents.FindAll(e => string.Equals(e.UserName, person.Name));
-                workEvents.RemoveAll(e => string.Equals(e.UserName, person.Name));
+                person.SetWorkTime(WhoStartOnNineOClock);
+                var personEvents = workEvents.FindAll(e => string.Equals(e.UserName, person.Name, new StringComparison()));
+                workEvents.RemoveAll(e => string.Equals(e.UserName, person.Name, new StringComparison()));
                 while (personEvents.Count > 0)
                 {
                     WorkEvent first = null;
@@ -77,62 +77,86 @@ namespace Reporter
                     }
                     if (first == null) continue;
                     var currentDate = first.Date;
-                    var eventsCurrentDateEnter = personEvents.FindAll(e => DateTime.Equals(e.Date, currentDate)
-                                                                       && e.Direction == Direction.In);
+                    var currentPersonEvents = personEvents.FindAll(e => DateTime.Equals(e.Date, currentDate));
+                    currentPersonEvents.Sort();
+                    var currentPersoneEventsAfterMidnight = personEvents.FindAll(e => DateTime.Equals(e.Date, currentDate.AddDays(1)) 
+                                                                                                   && e.Time > TimeSpan.Zero 
+                                                                                                   && e.Time < person.Startday.Subtract(new TimeSpan(4,0,0)));
+                    currentPersoneEventsAfterMidnight.Sort();
+                    var enter = currentPersonEvents.Any(c=>c.Direction == Direction.In)
+                              ? currentPersonEvents.FirstOrDefault(c => c.Direction == Direction.In)?
+                                                   .Time ?? (currentPersonEvents.FirstOrDefault()
+                                                                               ?.Time 
+                                                                               ?? TimeSpan.MinValue)
+                              : TimeSpan.MinValue;
+                    var outgo = currentPersoneEventsAfterMidnight.Any()
+                              ? currentPersoneEventsAfterMidnight.LastOrDefault()
+                                                                 .Time
+                              : (currentPersonEvents.Any(c=>c.Direction == Direction.Out || c.Time > person.Endday)
+                                 ? currentPersonEvents.LastOrDefault(c => c.Direction == Direction.Out || c.Time > person.Endday)
+                                                     ?.Time ?? TimeSpan.MinValue
+                                 : TimeSpan.MinValue);
                     var description = "";
-                    var eventsCurrentDateOut = personEvents.FindAll(e =>
-                                                   (DateTime.Equals(e.Date, currentDate) ||
-                                                   (DateTime.Equals(e.Date, currentDate.AddDays(1))
-                                                    && (e.Time > TimeSpan.Zero && e.Time < person.Startday)))
-                                                    && e.Direction == Direction.Out);
-                    var enter = TimeSpan.MinValue;
-                    if (eventsCurrentDateEnter.Count == 0)
-                    {
-                        description = eventsCurrentDateOut.Count == 0
-                                    ? "Административный"
-                                    : (eventsCurrentDateOut.Count == 1
-                                        ? "Не отметился, не возможно определить время прихода"
-                                        : $"Не отметился, предполагаемое время прихода {TimeSpan.FromMilliseconds(eventsCurrentDateOut.ElementAt(0).Time.TotalMilliseconds - (eventsCurrentDateOut.ElementAt(1).Time.TotalMilliseconds / 2))}"
-                                    );
-                    }
-                    else
-                    {
-                        enter = eventsCurrentDateEnter.FirstOrDefault()
-                                                     ?.Time
-                              ?? TimeSpan.MinValue;
-                    }
-                    var outer = TimeSpan.MinValue;
-                    if (eventsCurrentDateOut.Count == 0)
-                    {
-                        description = eventsCurrentDateEnter.Count == 0
-                                    ? "Административный"
-                                    : (eventsCurrentDateEnter.Count == 1
-                                        ? "Не отметился, не возможно определить время ухода"
-                                        : $"Не отметился, последний зарегестрированный вход {eventsCurrentDateEnter.Last().Time}");
-                    }
-                    else
-                    {
-                        var index = personEvents.IndexOf(eventsCurrentDateOut.Last());
-                        if (index == personEvents.Count - 1)
-                        {
-                            outer = eventsCurrentDateOut.Last()
-                                                        .Time;
-                        }
-                        else
-                        {
-                            outer = personEvents.ElementAt(index + 1)
-                                                .Direction == Direction.In
-                                ? eventsCurrentDateOut.Last()
-                                                      .Time
-                                : personEvents.FindAll(p => DateTime.Equals(p.Date, currentDate) || 
-                                                           (DateTime.Equals(p.Date, currentDate.AddDays(1)) &&
-                                                             (p.Time < person.Startday)) &&
-                                                            p.Direction == Direction.Out).Last()?.Time ?? TimeSpan.Zero;
-                        }
-                    }
+                    if (enter == TimeSpan.MinValue &&
+                       outgo == TimeSpan.MinValue)
+                        description = "Административный";
+                    //var eventsCurrentDateEnter = personEvents.FindAll(e => DateTime.Equals(e.Date, currentDate)
+                    //                                                   && e.Direction == Direction.In);
+                    //var description = "";
+                    //var eventsCurrentDateOut = personEvents.FindAll(e =>
+                    //                               (DateTime.Equals(e.Date, currentDate) ||
+                    //                               (DateTime.Equals(e.Date, currentDate.AddDays(1))
+                    //                                && (e.Time > TimeSpan.Zero && e.Time < person.Startday)))
+                    //                                && e.Direction == Direction.Out);
+                    //var enter = TimeSpan.MinValue;
+                    //if (eventsCurrentDateEnter.Count == 0)
+                    //{
+                    //    description = eventsCurrentDateOut.Count == 0
+                    //                ? "Административный"
+                    //                : (eventsCurrentDateOut.Count == 1
+                    //                    ? "Не отметился, не возможно определить время прихода"
+                    //                    : $"Не отметился, предполагаемое время прихода {TimeSpan.FromMilliseconds(eventsCurrentDateOut.ElementAt(0).Time.TotalMilliseconds - (eventsCurrentDateOut.ElementAt(1).Time.TotalMilliseconds / 2))}"
+                    //                );
+                    //}
+                    //else
+                    //{
+                    //    enter = eventsCurrentDateEnter.FirstOrDefault()
+                    //                                 ?.Time
+                    //          ?? TimeSpan.MinValue;
+                    //}
+                    //var outer = TimeSpan.MinValue;
+                    //if (eventsCurrentDateOut.Count == 0)
+                    //{
+                    //    description = eventsCurrentDateEnter.Count == 0
+                    //                ? "Административный"
+                    //                : (eventsCurrentDateEnter.Count == 1
+                    //                    ? "Не отметился, не возможно определить время ухода"
+                    //                    : $"Не отметился, последний зарегестрированный вход {eventsCurrentDateEnter.Last().Time}");
+                    //}
+                    //else
+                    //{
+                    //    var index = personEvents.IndexOf(eventsCurrentDateOut.Last());
+                    //    if (index == personEvents.Count - 1)
+                    //    {
+                    //        outer = eventsCurrentDateOut.Last()
+                    //                                    .Time;
+                    //    }
+                    //    else
+                    //    {
+                    //        outer = personEvents.ElementAt(index + 1)
+                    //                            .Direction == Direction.In
+                    //            ? eventsCurrentDateOut.Last()
+                    //                                  .Time
+                    //            : personEvents.FindAll(p => DateTime.Equals(p.Date, currentDate) || 
+                    //                                       (DateTime.Equals(p.Date, currentDate.AddDays(1)) &&
+                    //                                         (p.Time < person.Startday)) &&
+                    //                                        p.Direction == Direction.Out).Last()?.Time ?? TimeSpan.Zero;
+                    //    }
+                    //}
                     person.VisitList
-                          .Add(new Visit(currentDate, enter, outer, description));
-                    personEvents.RemoveAll(p => DateTime.Equals(p.Date, currentDate));
+                          .Add(new Visit(currentDate, enter, outgo, description));
+                    personEvents.RemoveAll(p=>currentPersonEvents.Contains(p) || 
+                                              currentPersoneEventsAfterMidnight.Contains(p));
                 }
                 persons.Add(person);
             }
@@ -187,8 +211,8 @@ namespace Reporter
         {
             persons = GetPersons();
             persons.RemoveAll(p => p.Name
-                                         .ToLower()
-                                         .Contains("гость") ||
+                                    .ToLower()
+                                    .Contains("гость") ||
                                     string.IsNullOrEmpty(p.Name));
             persons.Sort();
             var newFileName = FileName.Substring(0, FileName.Length - 5) + "_new.xlsx";
